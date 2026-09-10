@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-11 - Agent（TASK-022 建立 Git 基线）
+
+Added:
+- 首个基线提交 `5509a85`（`master`，351 文件 / 43324 行），涵盖源码、测试、知识库与 `third_party` 固化插件。
+- 远端 `origin` 指向 `https://gitee.com/chenxihh/test_c.git`。
+
+Changed:
+- `.gitignore`：整体排除本地 Obsidian vault `/课表知识库/`（知识库正文仍由 `/knowledge` 入库），新增 `/tmp/`。
+- `android/.gitignore` 新增 `/build/`——原 `/build/` 只锚定仓库根目录，导致 `android/build/reports/` 下的 Gradle 产物会被误提交。
+- `knowledge/testing.md` 移除两台真机的硬件序列号，仅保留机型。
+
+Validation:
+- `CONFIRMED` 提交前扫描 351 个待提交文件：无 keystore / key.properties / .env / google-services.json；无 `sk-` / `AKIA` / `ghp_` / `glpat-` / 私钥块等密钥格式；`lib`、`test`、`knowledge`、`android` 内无硬编码凭据、无 Bearer / Authorization。项目本身不使用任何 API key。
+- `CONFIRMED` 提交后工作区干净（`git status` 无输出）。
+- `BLOCKED` 推送失败：GCM 返回 `cjh: Incorrect username or password (access token)`，需用户本人交互式认证后重推。
+
 ## 2026-09-11 - Agent（TASK-028 默认学期起点改用校历；TASK-027 第二台真机安装）
 
 Added:

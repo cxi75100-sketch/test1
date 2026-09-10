@@ -7,7 +7,7 @@
 ## Next
 
 - [ ] TASK-014 实现本地通知
-- [ ] TASK-022 建立 Git 基线提交 —— 当前仓库尚无 commit，项目文件全部为 untracked；需先确认提交边界并排除本机/构建产物，再创建首个可恢复基线。
+- [ ] TASK-022 建立 Git 基线提交 —— 基线提交 `5509a85` 已在本地 `master` 分支建立（351 文件 / 43324 行），远端 `origin` = `https://gitee.com/chenxihh/test_c.git` 已配置；**推送尚未成功**：Git Credential Manager 使用了错误用户名（源自 git config `user.name`「c jh」）且无可用个人令牌，需用户本人完成一次交互式认证。
 
 ## Blocked
 
