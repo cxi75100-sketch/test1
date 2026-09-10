@@ -19,6 +19,7 @@
 - `home_widget.md`：Android 桌面小组件协议、刷新时机与真机验收步骤
 - `testing.md`：测试范围与结果
 - `changelog.md`：实质变更记录
+- `incident_2026-09-11_db_injection.md`：事故报告 —— 真机数据库注入因 GBK 编码导致 App 课表加载失败
 - `android_setup.md`：Android 工具链配置与验收交接
 - `android_agent_prompt.md`：可直接交给环境配置 Agent 的提示词
 
