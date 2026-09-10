@@ -1,5 +1,15 @@
 # 桌面小组件（Android）
 
+## 布局硬约束（踩过坑，务必遵守）
+
+**小组件布局里只能使用带 `@RemoteView` 注解的类。** RemoteViews 的 LayoutInflater 会拒绝其他类，抛出的 `InflateException` 由**宿主启动器**吞掉，表现为小组件显示「载入小窗口时出现问题」，而 logcat 里看不到任何堆栈，极难定位。
+
+- 允许：`LinearLayout`、`FrameLayout`、`RelativeLayout`、`GridLayout`、`TextView`、`ImageView`、`Button`、`ImageButton`、`ProgressBar`、`ListView`、`GridView`、`ViewStub` 等。
+- **不允许：`android.view.View`、`android.view.ViewGroup`**（两者都没有该注解）。分隔线、色条这类"空白块"必须用无文字的 `TextView` 或 `ImageView` 代替。
+- 快速自检：`javap -v -classpath <android-sdk>/platforms/android-36/android.jar android.view.View | grep RemoteView` —— 没有输出就说明不能用。
+
+排查此类问题的最快手段不是读日志，而是重新构建安装后看 `AppWidgetHostView` 是否仍打 `mViewMode == VIEW_MODE_ERROR`：该标志为 ERROR 后会持续显示错误视图，修好后重装并触发一次推送即可恢复。
+
 ## 目标
 
 主屏上直接看到「今天要上的课」，不需要打开 App。展示「第 N 周 · 周X」表头与今天的课程（节次时间 + 课名 + 教室 + 课程色条）；无课显示「今天没有课」，学期前后显示对应状态。点击任意位置打开 App。
@@ -104,7 +114,7 @@ Android：
 - `android/app/src/main/AndroidManifest.xml`（receiver）
 - `android/app/src/test/kotlin/.../widget/WidgetScheduleCalculatorTest.kt`
 
-## 真机验收步骤（TASK-019，待设备）
+## 真机验收步骤（TASK-019）
 
 1. `flutter devices` 确认设备 → `flutter run --debug`。
 2. 在 App 内确认已有课程（无则手动加一节今天的课）。
@@ -116,6 +126,11 @@ Android：
 8. 跨天验证：临时把系统日期改到明天（或下周同一天），确认小组件重算周次与课程；改回后复原。若不便改日期，可改学期开学周一使「今天」落到别的周次。
 9. 记录结果到 `knowledge/testing.md` 与 `knowledge/issues.md`（若有问题）。
 
+进度（2026-09-11，OnePlus PLC110 / Android 16）：
+
+- 已完成：步骤 3（成功添加，选择器中可见「南工课表」）、步骤 4（表头「第 2 周 · 周五」，当天 3 门课全部命中，时间与官方作息一致）。
+- 待完成：步骤 5、6、7、8。
+
 ## 已知局限与风险
 
 - `updatePeriodMillis` 最细 30 分钟：跨天后最多延迟 30 分钟自动换天（打开 App 或点小组件会立即修正）。
@@ -126,5 +141,7 @@ Android：
 
 ## 验证状态
 
-- `CONFIRMED`：`flutter analyze` 无问题；`flutter test` 53/53；`gradlew :app:testDebugUnitTest` 13/13；Debug APK 构建通过，清单含 receiver 与 appwidget 元数据，未新增权限。
-- `BLOCKED`：真机渲染、添加/缩放、跨天刷新、点击打开 App。
+- `CONFIRMED`：`flutter analyze` 无问题；`flutter test` 103/103；`gradlew :app:testDebugUnitTest` 13/13；Debug APK 构建通过，清单含 receiver 与 appwidget 元数据，未新增权限。
+- `CONFIRMED`（2026-09-11，OnePlus PLC110 / Android 16）：provider 配置在 `dumpsys appwidget` 中正常；主屏可添加「南工课表」；表头与当天课程、时间渲染正确。
+- `BLOCKED`：缩放行为、跨天重算、点击打开 App、数据变更后即时刷新 —— 见 TASK-019 待完成步骤。
+- `Resolved`：ISSUE-013（`<View>` 导致 inflate 失败）已修复并复验，务必遵守上面的「布局硬约束」。

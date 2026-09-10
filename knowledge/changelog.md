@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-11 - Agent（TASK-019 小组件真机验收；修复 RemoteViews 布局缺陷）
+
+Fixed:
+- **小组件在主屏显示「载入小窗口时出现问题」**（ISSUE-013）。根因：`widget_timetable.xml` 的分隔线与 `widget_row.xml` 的课程色条使用了 `android.view.View`，而 RemoteViews 的 LayoutInflater 只允许带 `@RemoteView` 注解的类（`View` 与 `ViewGroup` 都没有）。两处改为无文字的 `TextView`，Kotlin 侧无需改动。
+- 该缺陷此前无法从日志定位：启动器吞掉了 `InflateException`，logcat 里只有 `inflateAsync` 紧接 `mViewMode == VIEW_MODE_ERROR`。
+
+Added:
+- `knowledge/home_widget.md` 新增「布局硬约束」：明确列出 RemoteViews 允许的控件类型、禁用 `View`/`ViewGroup`，并给出 `javap` 自检命令与排查手段。
+
+Changed:
+- ISSUE-011 关闭：`dumpsys appwidget` 的 `min=(46081x28161)` 是 dp 值与标志位的打包输出（`180<<8|1`、`110<<8|1`），即 180dp × 110dp，并非异常；此前"全为 0"只是 provider 信息尚未被系统加载。
+
+Validation:
+- `CONFIRMED` Debug APK 构建并安装成功；修复后 `mViewMode == VIEW_MODE_ERROR` 计数归零。
+- `CONFIRMED` 主屏语义树实测：表头「第 2 周 · 周五」与设备日期 2026-09-11 一致；当天 3 门课全部命中；时间 `10:25-11:55` / `14:00-15:30` / `15:55-17:25` 与官方作息一致。
+- `CONFIRMED` 小组件可通过启动器的添加小组件流程找到并放置（TASK-019 步骤 3、4 完成）。
+- `BLOCKED` 缩放行为、跨天重算、点击打开 App、数据变更后即时刷新仍未验证（TASK-019 步骤 5-8）。
+
 ## 2026-09-11 - Agent（TASK-021 教务导入真机端到端验收通过）
 
 Changed:

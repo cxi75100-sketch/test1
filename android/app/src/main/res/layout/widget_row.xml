@@ -7,7 +7,9 @@
     android:paddingTop="3dp"
     android:paddingBottom="3dp">
 
-    <View
+    <!-- 课程色条。不能用 View 控件：RemoteViews 只允许 @RemoteView 注解的类，
+         使用 android.view.View 会让整个小组件 inflate 失败。 -->
+    <TextView
         android:id="@+id/widget_row_color"
         android:layout_width="3dp"
         android:layout_height="18dp"

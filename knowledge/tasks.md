@@ -10,7 +10,7 @@
 
 ## Blocked
 
-- [ ] TASK-019 桌面小组件真机验收 —— `BLOCKED`：真机已确认 provider 注册和 Dart → SharedPreferences 数据同步；仍需用户在 vivo 启动器手动添加小组件，才能验收主屏渲染、缩放、跨天重算与点击打开 App（验收步骤见 `knowledge/home_widget.md`）。
+- [ ] TASK-019 桌面小组件真机验收 —— 进行中（2026-09-11，OnePlus PLC110 / Android 16）。已完成：启动器可选择并添加「南工课表」（ISSUE-011 关闭）、表头与当天课程时间渲染正确（ISSUE-013 修复后复验）。**待用户操作**：点击小组件打开 App、拖拽缩放（确认行数变化与「还有 N 门课」）、在 App 内增删今天的课看是否即时刷新、跨天重算。验收步骤见 `knowledge/home_widget.md`。
 
 ## Done
 

@@ -18,7 +18,9 @@
         android:textSize="13sp"
         android:textStyle="bold" />
 
-    <View
+    <!-- RemoteViews 只允许带 @RemoteView 注解的类，android.view.View 不在其中，
+         使用它会让小组件显示为加载失败。分隔线因此用无文字的 TextView。 -->
+    <TextView
         android:id="@+id/widget_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"

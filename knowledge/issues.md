@@ -126,19 +126,36 @@ Possible Solution:
 - 首选：用户接入 Android 真机（USB + 开发者模式 + adb 授权）后执行 `flutter run --debug`，按 `knowledge/home_widget.md` 的 9 步验收流程逐项确认。
 - 备选：授权安装 emulator + system-image 后在模拟器验证（模拟器可改系统日期，便于跨天验证）。
 
-## ISSUE-011 小组件 provider 在 dumpsys 中配置全为 0（待复检）
+## ISSUE-011 小组件 provider 在 dumpsys 中配置全为 0
 
-Status: Open（待真机复检）
+Status: Resolved（2026-09-11 复检）
 
-Observed: 2026-09-10 20:1x 在 vivo V1981A / Android 12 (API 31) 上安装 Debug APK 后，`dumpsys appwidget` 中该 provider 显示 `min=(0x0) minResize=(0x0) updatePeriodMillis=0 resizeMode=0 widgetCategory=0 initialLayout=#0`（同机 bilibili 小组件显示正常值）。
+Observed: 2026-09-10 在 vivo V1981A 上安装后，`dumpsys appwidget` 中该 provider 显示各项全 0（同机其他小组件正常）。
 
-已排除的原因：APK 内编译资源经 aapt2 `dump xmltree --file res/xml/timetable_widget_info.xml` 校验**完全正确**：`minWidth=180dp`、`minHeight=110dp`、`updatePeriodMillis=1800000`、`initialLayout`/`previewLayout` 指向 `@layout/widget_timetable`、`resizeMode=0x3`、`widgetCategory=0x1`、`targetCellWidth=3`/`targetCellHeight=2`；清单内 `android.appwidget.provider` 指向 `@0x7f120003`。
+Resolution: 2026-09-11 在 OnePlus PLC110 上添加小组件后复检，配置全部正常：
+`min=(46081x28161) minResize=(46081x28161) updatePeriodMillis=1800000 resizeMode=3 widgetCategory=1 initialLayout=#7f0c0030`。
 
-初步判断：可能只是系统尚未加载新安装应用的 `AppWidgetProviderInfo`（惰性加载），需先打开一次小组件选择器或添加小组件后再复检 `dumpsys appwidget`。
+`min` 的数值形如 `180<<8|1 = 46081`、`110<<8|1 = 28161`，即该版本 dumpsys 把 dp 值与标志位打包输出，**实际就是 `timetable_widget_info.xml` 里的 180dp × 110dp，并非异常**。此前"配置全为 0"只是 provider 信息尚未被系统加载（首次安装后未打开过小组件选择器），属惰性加载，不是缺陷。
 
-Impact: 若为真实问题，小组件可能不出现在选择器中，或无法按 `updatePeriodMillis` 周期刷新（跨天自动换天失效，仅剩 App 打开时的推送）。
+Next Step: 无需动作。以后判断该 provider 是否正常，请把 dumpsys 数值按 `>>8` 解读后再比较。
 
-Next Step: 用户在主屏长按 → 添加小组件，确认列表是否出现「南工课表」、能否添加、能否正常显示；随后复检 `dumpsys appwidget`。若添加后仍为全 0，需排查 vivo 启动器（`com.bbk.launcher2`）对该 provider 的解析与兼容性。
+## ISSUE-013 小组件显示「载入小窗口时出现问题」（RemoteViews 不接受 View 控件）
+
+Status: Resolved（2026-09-11）
+
+Observed: 2026-09-11 用户在 OnePlus PLC110 上把「南工课表」小组件添加到主屏后，显示系统的加载失败文案。日志中 `AppWidgetHostView: inflateAsync(rvToApply)` 之后立刻 `mViewMode == VIEW_MODE_ERROR`，**且启动器不打印任何异常堆栈**（欧加定制启动器吞掉了错误），因此从日志无法直接得到原因。
+
+已排除：provider 注册、载荷数据、Dart 侧渲染都已确认正常 —— `WidgetRenderer.render` 成功产出 `RemoteViews` 并通过 `updateAppWidgetIds` 提交，我们自己进程内无异常。
+
+Root cause: 布局 `widget_timetable.xml` 的 `widget_divider` 与 `widget_row.xml` 的 `widget_row_color` 使用了 `android.view.View`。**RemoteViews 的 LayoutInflater 只允许带 `@RemoteView` 注解的类**，`android.view.View` 与 `android.view.ViewGroup` 都没有该注解。可用 `javap -v -classpath <android.jar> <类名> | grep RemoteView` 验证：`LinearLayout`/`TextView`/`ImageView` 有，`View`/`ViewGroup` 没有。
+
+Impact: 整个小组件 inflate 失败并停留在错误态；`mViewMode` 为 ERROR 后即使后续送来正确 RemoteViews 也会持续显示错误视图。
+
+Resolution: 两处 `<View>` 改为无文字的 `<TextView>`（分隔线、课程色条）。`setBackgroundColor` / `setViewVisibility` 对 TextView 同样有效，Kotlin 侧无需改动。
+
+Resolution Evidence: 重装后 `mViewMode == VIEW_MODE_ERROR` 归零；主屏语义树读到表头「第 2 周 · 周五」，当天 3 门课全部命中，时间 `10:25-11:55` / `14:00-15:30` / `15:55-17:25` 与官方作息一致。
+
+Prevention: 见 `knowledge/home_widget.md`「布局硬约束」。
 
 ## ISSUE-012 Git 仓库没有基线提交
 
