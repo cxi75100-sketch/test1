@@ -7,7 +7,6 @@
 ## Next
 
 - [ ] TASK-014 实现本地通知
-- [ ] TASK-022 建立 Git 基线提交 —— 基线提交 `5509a85` 已在本地 `master` 分支建立（351 文件 / 43324 行），远端 `origin` = `https://gitee.com/chenxihh/test_c.git` 已配置；**推送尚未成功**：Git Credential Manager 使用了错误用户名（源自 git config `user.name`「c jh」）且无可用个人令牌，需用户本人完成一次交互式认证。
 
 ## Blocked
 
@@ -15,6 +14,8 @@
 - [ ] TASK-019 桌面小组件真机验收 —— `BLOCKED`：真机已确认 provider 注册和 Dart → SharedPreferences 数据同步；仍需用户在 vivo 启动器手动添加小组件，才能验收主屏渲染、缩放、跨天重算与点击打开 App（验收步骤见 `knowledge/home_widget.md`）。
 
 ## Done
+
+- [x] TASK-022 建立 Git 基线提交（2026-09-11 完成）：基线提交 `5509a85`（351 文件 / 43324 行）与文档收尾提交 `938c78c` 已推送到 `origin` = `https://gitee.com/chenxihh/test_c.git` 的 `master` 分支，本地与远端一致。提交前扫描确认无密钥、无构建产物、无身份信息；修正 `.gitignore` 对 `android/build/`、本地 Obsidian vault 和 `tmp/` 的遗漏。首次推送因 Git Credential Manager 回退到 `user.name` 导致用户名错误而失败，用户交互式提供 Gitee 私人令牌后推送成功。
 
 - [x] TASK-028 默认学期起点改用校历常量（2026-09-11 完成）：新增 `officialFirstWeekMonday`（2026-08-31），`ensureDefaults()` 不再把“安装当天所在周的周一”当作第一周周一；该启发式会让第 2 周及以后安装的设备少算一周，并使单双周、限定周次课程错位。`flutter analyze` 无问题、`flutter test` 84/84、Debug APK 重新构建并覆盖安装到 OnePlus PLC110；该机旧学期记录已定向修正。真机首页周次文案未截屏确认（截屏时手机在前台使用，画面被其他 App 浮窗覆盖）。
 

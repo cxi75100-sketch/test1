@@ -14,7 +14,8 @@ Changed:
 Validation:
 - `CONFIRMED` 提交前扫描 351 个待提交文件：无 keystore / key.properties / .env / google-services.json；无 `sk-` / `AKIA` / `ghp_` / `glpat-` / 私钥块等密钥格式；`lib`、`test`、`knowledge`、`android` 内无硬编码凭据、无 Bearer / Authorization。项目本身不使用任何 API key。
 - `CONFIRMED` 提交后工作区干净（`git status` 无输出）。
-- `BLOCKED` 推送失败：GCM 返回 `cjh: Incorrect username or password (access token)`，需用户本人交互式认证后重推。
+- `CONFIRMED` 推送成功：`master` → `origin/master`，远端 `HEAD` 与本地 `HEAD` 均为 `938c78c`。首次推送因 GCM 回退到 `git config user.name`（「c jh」→ `cjh`）而认证失败，用户交互式提供 Gitee 私人令牌后成功；已设 `credential.username=chenxihh` 避免再次猜错。
+- 注意：仓库为公开仓库，推送到 Gitee 后源码与知识库对外可见。
 
 ## 2026-09-11 - Agent（TASK-028 默认学期起点改用校历；TASK-027 第二台真机安装）
 
