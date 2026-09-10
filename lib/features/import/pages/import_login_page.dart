@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
@@ -12,6 +13,8 @@ import '../providers/import_capture_providers.dart';
 import '../providers/import_providers.dart';
 import '../services/import_capture.dart';
 import '../services/import_capture_script.dart';
+import '../services/import_diff.dart';
+import '../services/import_session_cleaner.dart';
 import '../services/navigation_policy.dart';
 import '../widgets/import_preview_dialog.dart';
 import '../../timetable/providers/timetable_providers.dart';
@@ -46,9 +49,28 @@ class _ImportLoginPageState extends ConsumerState<ImportLoginPage> {
 
   static const _policy = NavigationPolicy();
 
+  /// dispose() 里不能再碰 ref（Riverpod 在 unmount 时会抛错），
+  /// 因此把离开页面时要清理的对象提前取好。
+  late final ImportRawTimetable _rawTimetable;
+  late final ImportSessionCleaner _sessionCleaner;
+
+  @override
+  void initState() {
+    super.initState();
+    _rawTimetable = ref.read(importRawTimetableProvider.notifier);
+    _sessionCleaner = ref.read(importSessionCleanerProvider);
+  }
+
   @override
   void dispose() {
+    // 先清 HTTP 缓存再销毁控制器：静态调用不依赖 controller 实例。
+    // 按用户选择保留 Cookie 与 WebStorage，下次导入免登录（见 decisions.md）。
+    if (_controller != null) {
+      unawaited(_sessionCleaner.clearHttpCache());
+    }
     _controller?.dispose();
+    // 课表原始响应含身份字段，页面销毁后不应继续驻留内存。
+    _rawTimetable.clear();
     super.dispose();
   }
 
@@ -463,7 +485,7 @@ class _ImportLoginPageState extends ConsumerState<ImportLoginPage> {
     } on Exception {
       // 落到直接查库。
     }
-    return database.firstSemester();
+    return database.currentSemester();
   }
 
   Future<void> _tryImport(SchoolAdapter adapter) async {
@@ -485,15 +507,18 @@ class _ImportLoginPageState extends ConsumerState<ImportLoginPage> {
       if (!mounted) return;
       switch (result) {
         case ImportSuccess(:final courses):
+          final database = ref.read(databaseProvider);
+          // 必须在替换前取旧列表：replaceImportedCourses 会删掉上一次导入的记录。
+          final previous = await database.watchCourses(semester.id).first;
+          if (!mounted) return;
           final confirmed = await ImportPreviewDialog.show(
             context,
             schoolName: adapter.schoolName,
             courses: courses,
+            diff: diffImportedCourses(previous: previous, next: courses),
           );
           if (!confirmed || !mounted) return;
-          await ref
-              .read(databaseProvider)
-              .replaceImportedCourses(semester.id, courses);
+          await database.replaceImportedCourses(semester.id, courses);
           if (!mounted) return;
           await _showMessage(
             '导入完成',

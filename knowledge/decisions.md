@@ -110,3 +110,18 @@ Reason:
 - 自写使全部代码留在仓库内、零新增依赖，且周次计算可以抽成纯 Kotlin 做 JVM 单元测试。
 
 Consequences: 需要自行维护 Android 原生小组件代码；小组件相关的日期/周次逻辑与 Dart `SemesterService` 形成双实现，必须靠两侧测试与 `knowledge/home_widget.md` 的协议说明保持一致。iOS WidgetKit 未覆盖（需要额外 Xcode target 与 App Group），V1 不做。
+
+## DEC-010 离开导入页只清 HTTP 缓存，保留教务登录态
+
+Status: Accepted
+
+Context: 教务站在明文 HTTP 上运行。App 自身不读取、不保存 Cookie，但 WebView 会把教务登录 Cookie 与 WebStorage 写在设备上，且此前没有任何清理逻辑（`dispose()` 只销毁 controller）。
+
+Decision: 离开导入页（`dispose()`）时清理 WebView 的 HTTP 缓存（含磁盘文件，`InAppWebViewController.clearAllCache`），并清空内存中的课表原始响应；**不清理 Cookie 与 WebStorage**。
+
+Reason: 用户明确选择保留登录态，避免每次导入都要重新登录教务系统。
+
+Consequences:
+- 明文 HTTP 会话的 Cookie 与 localStorage 仍会落盘，直到用户退出教务或清除应用数据。**这不是已解决的安全问题，而是被明确接受的取舍**；如需排除，改法是在 `ImportSessionCleaner` 中追加 `CookieManager.deleteAllCookies()` 与 `WebStorageManager.deleteAllData()`，代价是每次导入都要重新登录。
+- 清理是尽力而为：失败只影响存储占用，不影响导入功能，因此 `clearHttpCache()` 不抛异常。
+- 自动化测试只能验证「不抛异常」与调用时机；缓存确实被清掉需要在真机上对比 `app_webview/` 目录体积。

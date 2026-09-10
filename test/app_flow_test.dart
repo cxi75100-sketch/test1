@@ -44,7 +44,7 @@ void main() {
     await database.ensureDefaults();
     // 默认学期起点由校历决定，因此“当前周”随运行日期变化；
     // 这里按与界面相同的规则取当前周，避免测试依赖具体运行日期。
-    final semester = (await database.firstSemester())!;
+    final semester = (await database.currentSemester())!;
     final currentWeek = const SemesterService().currentWeek(
       semester,
       DateTime.now(),

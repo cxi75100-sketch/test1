@@ -10,10 +10,17 @@
 
 ## Blocked
 
+- [ ] TASK-032 TASK-029/030/031 的真机验收 —— `BLOCKED`：执行期间 OnePlus PLC110 断开连接（`adb devices` 为空，重启 adb server 后仍无设备），以下均未在真机确认：清缓存是否真的清掉 `app_webview/` 体积且保留登录态、周次失效提示条的实际显示、导入预览新增/移除行的排版。需重新接入设备后执行。
 - [ ] TASK-021 教务课表导入真机端到端验收 —— `BLOCKED`：接口、解析器、预览与本地替换写入代码均已完成，真机现已可连接且生产库中已有教务课程；仍需用户本人在 WebView 完成登录并当场确认预览条数/字段、手动课程保留及再次导入结果。不得自动填写或保存账号密码。
 - [ ] TASK-019 桌面小组件真机验收 —— `BLOCKED`：真机已确认 provider 注册和 Dart → SharedPreferences 数据同步；仍需用户在 vivo 启动器手动添加小组件，才能验收主屏渲染、缩放、跨天重算与点击打开 App（验收步骤见 `knowledge/home_widget.md`）。
 
 ## Done
+
+- [x] TASK-031 学期日期失效提示（2026-09-11 完成）：`currentWeek()` 会把超出学期的周次封顶到 `totalWeeks`，"学期已结束"与"第 20 周"不可区分。新增 `TermStatus{before,within,after}` 与 `SemesterService.termStatus`，把 `timetable_page` 私有的日期算法抽成 `SemesterService.dateFor`，并在周概览与日期条之间加提示条（点击跳设置）。`flutter analyze` 无问题、`flutter test` 100/100（新增 9 个本学期相关测试）。
+
+- [x] TASK-030 学期逻辑卫生（2026-09-11 完成）：`totalWeeks: 20` 与 `?? 20` 两处硬编码提为 `defaultTotalWeeks`；`AppDatabase.firstSemester()` 更名为 `currentSemester()` 并补文档，说明按 `firstWeekMonday` 倒序取第一条（最近开始的学期），不判断今天是否在学期内。
+
+- [x] TASK-029 导入体验改造（2026-09-11 完成）：(a) 新增 `ImportSessionCleaner`，离开导入页时清理 WebView HTTP 缓存并清空内存中的课表原始响应；按用户决定保留 Cookie 与 WebStorage，取舍与残留风险记入 DEC-010。(b) 新增 `diffImportedCourses` 纯函数（按稳定的课程 id 比对，只比较教务来源），导入预览新增「相对上次导入：新增 N 条 · 移除 M 条」并列出将被移除的课程。`flutter analyze` 无问题、`flutter test` 100/100。
 
 - [x] TASK-022 建立 Git 基线提交（2026-09-11 完成）：基线提交 `5509a85`（351 文件 / 43324 行）与文档收尾提交 `938c78c` 已推送到 `origin` = `https://gitee.com/chenxihh/test_c.git` 的 `master` 分支，本地与远端一致。提交前扫描确认无密钥、无构建产物、无身份信息；修正 `.gitignore` 对 `android/build/`、本地 Obsidian vault 和 `tmp/` 的遗漏。首次推送因 Git Credential Manager 回退到 `user.name` 导致用户名错误而失败，用户交互式提供 Gitee 私人令牌后推送成功。
 

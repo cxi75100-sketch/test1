@@ -74,7 +74,9 @@ widget/
 
 页面 → Riverpod provider/controller → repository → Drift database → SQLite。
 
-教务导入：风险确认 → 受限 WebView 自行登录 → 打开学生课表查询 → 同源脚本把课表响应送入内存 → `SchoolAdapter.parseTimetable` → 预览 → 用户确认 → `replaceImportedCourses`。适配器不接收 Cookie 或其他凭证；原始响应不落盘，学校原始字段不得进入 UI。
+教务导入：风险确认 → 受限 WebView 自行登录 → 打开学生课表查询 → 同源脚本把课表响应送入内存 → `SchoolAdapter.parseTimetable` → `diffImportedCourses` 与上次导入比对 → 预览（含新增/移除）→ 用户确认 → `replaceImportedCourses` → 离开页面时 `ImportSessionCleaner` 清 HTTP 缓存并清空内存响应。适配器不接收 Cookie 或其他凭证；原始响应不落盘，学校原始字段不得进入 UI。
+
+周次与日期：`SemesterService` 统一提供 `currentWeek`（超出学期时封顶到 `totalWeeks`）、`termStatus`（学期前/中/后，用于发现学期设置过期）与 `dateFor`（第 N 周星期 X 的日期）。课表页在 `termStatus != within` 时显示提示条跳转设置页。
 
 桌面小组件：课表数据变化 / App 回到前台 → `WidgetSync`（合并重复推送）→ 查库取整周快照 → `buildWidgetPayload` → MethodChannel → 原生 SharedPreferences → 系统周期更新或推送触发重绘。原生侧按设备日期自行计算周次与当天课程，因此 App 未运行也能显示正确内容；详细协议与验收步骤见 `knowledge/home_widget.md`。
 

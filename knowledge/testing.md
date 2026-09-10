@@ -3,7 +3,7 @@
 ## Automated Strategy
 
 - Week parser：范围、单双周、分段、离散周、中英文括号和非法输入。
-- Semester service：第一周、第二周、开学前、学期后边界。
+- Semester service：第一周、第二周、开学前、学期后边界；`termStatus` 的学期前/最后一天/结束后边界；`dateFor` 不夹取周次。
 - Database：CRUD、按学期/教学周查询、仅替换 ncpu 来源课程。
 - Database defaults：`ensureDefaults` 幂等；全新安装的默认学期起点来自校历常量（2026-08-31），而非安装当天所在周的周一。
 - Widget：空状态、课程展示、周切换和详情导航、设置页教务导入入口。
@@ -16,11 +16,15 @@
 - Widget payload builder：协议版本、学期字段、课程序列化、配色规则（含 colorKey 取绝对值）、节次时间（5 个测试）。
 - Widget sync：原生通道缺失时降级返回 false、启动快照含默认学期与 10 条节次时间、新增/删除课程后重新推送（4 个测试，用 `TestDefaultBinaryMessengerBinding` 打桩通道）。
 - Widget 日程计算（JVM / JUnit）：`gradlew :app:testDebugUnitTest`，EpochDay/ISO 星期、开学前、第 1 周、第 2 周周三、第 20 周周日、学期结束后、总周数非法、周次与星期过滤排序、时间来源优先级（13 个测试）。
+- ImportDiff：首次导入全为新增、内容相同无差异、单侧增删、手动课程不参与、同 id 改名不算差异（6 个测试）。
+- ImportSessionCleaner：平台实现未注册时静默降级、不抛异常（1 个测试）。
+- Timetable page：学期已结束/开学日在未来时显示提示条，学期日期在范围内时不显示（3 个测试，按运行日期推算学期避免时间依赖）。
 - Android toolchain：`flutter doctor -v` 全绿 + Debug APK 静态校验（签名 + 清单 + ABI + 权限）。
 
 ## Passed
 
 - `flutter analyze`（在 `R:\` 下）：No issues found。
+- `flutter test`（2026-09-11 +08:00）：100 tests passed。
 - `flutter test`（2026-09-11 00:03 +08:00）：84 tests passed。
 - `flutter test`（2026-09-10 23:47 +08:00）：83 tests passed。
 - `gradlew :app:testDebugUnitTest`（2026-09-10 TASK-018）：13 tests / 0 failures / 0 errors / 0 skipped（结果见 `build/app/test-results/testDebugUnitTest/`）。
@@ -82,6 +86,7 @@
   - `CONFIRMED`：覆盖安装后冷启动触发小组件载荷重推，`firstWeekMonday=2026-08-31`、`totalWeeks=20`、`schemaVersion=1`。
   - `UNVERIFIED`：首页“第 2 周”文案未截屏确认（手机当时在前台使用，截屏被其他 App 浮窗覆盖）；该截图已立即删除。
   - 隐私处理：验收过程中的截图与数据库副本已全部删除；未输出账号、Cookie、Session 或 Token。截屏前须确认手机未被他人使用。
+- Android 真机（2026-09-11 本轮改造验收）：`BLOCKED`。执行期间 OnePlus PLC110 断开连接，`adb devices` 为空、`adb kill-server` 重启后仍无设备，因此 TASK-029/030/031 全部未做真机验收 —— 清缓存是否真的清掉 `app_webview/` 体积、清理后是否仍保留登录态、学期提示条与导入预览差异行的实际排版都未确认，转 TASK-032。
 - Android 模拟器：未安装，如需可用需追加 `sdkmanager "emulator" "system-images;android-36;google_apis;x86_64"`。
 - WebView / 教务导入：`PARTIAL`。用户曾在真机通过 Debug 采集工具登录并打开课表页，已取得脱敏接口形状；当前源码又加入正式解析、预览和确认写入，但尚未对这一完整版本做真机端到端验收（TASK-021）。
 - 桌面小组件：`BLOCKED`。原生渲染、添加到主屏、缩放、跨天重算、点击打开 App 均无设备可验证；验收步骤见 `knowledge/home_widget.md`。

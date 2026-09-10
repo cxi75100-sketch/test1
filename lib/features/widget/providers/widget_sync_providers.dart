@@ -79,7 +79,7 @@ final widgetSyncProvider = Provider<WidgetSync>((ref) {
   final sync = WidgetSync(
     bridge: ref.watch(widgetBridgeProvider),
     loadPayload: () async {
-      final semester = await database.firstSemester();
+      final semester = await database.currentSemester();
       final courses = semester == null
           ? const <Course>[]
           : await database.watchCourses(semester.id).first;

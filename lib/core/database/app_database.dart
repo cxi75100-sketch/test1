@@ -94,7 +94,7 @@ class AppDatabase extends _$AppDatabase {
           id: 'default-semester',
           name: '当前学期',
           firstWeekMonday: officialFirstWeekMonday,
-          totalWeeks: 20,
+          totalWeeks: defaultTotalWeeks,
         ),
       );
     }
@@ -120,7 +120,12 @@ class AppDatabase extends _$AppDatabase {
           .watch()
           .map((rows) => rows.map(_semesterFromRow).toList());
 
-  Future<domain.Semester?> firstSemester() async {
+  /// 当前使用的学期。
+  ///
+  /// 按 `firstWeekMonday` 倒序取第一条，即**最近开始**的学期；V1 只有单学期，
+  /// 等价于当前学期。注意它不看今天是否落在学期区间内 —— 要判断日期是否
+  /// 过期请用 `SemesterService.termStatus`。
+  Future<domain.Semester?> currentSemester() async {
     final row =
         await (select(semesters)
               ..orderBy([(row) => OrderingTerm.desc(row.firstWeekMonday)])

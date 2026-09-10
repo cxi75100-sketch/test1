@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-11 - Agent（TASK-029 导入体验；TASK-030 学期逻辑卫生；TASK-031 学期日期提示）
+
+Added:
+- `ImportSessionCleaner`：离开导入页时清理 WebView HTTP 缓存。
+- `diffImportedCourses` 纯函数：按课程 id 求上一次与本次导入的新增/移除，只比较教务来源课程。
+- `SemesterService.termStatus` 与 `TermStatus{before,within,after}`；`SemesterService.dateFor`；`defaultTotalWeeks` 常量。
+- 课表页周概览下方的学期日期失效提示条（点击跳转设置页）。
+
+Changed:
+- 导入预览新增「相对上次导入：新增 N 条 · 移除 M 条」，并列出将被移除的课程，避免在按下确认前不知道教务删了课。
+- `import_login_page.dispose()` 先清缓存再销毁 controller，并清空内存中的课表原始响应。**按用户决定保留 Cookie 与 WebStorage**（下次导入免登录），取舍记入 DEC-010。
+- `timetable_page` 的私有 `_dateFor` 改为调用 `SemesterService.dateFor`，日期算法收敛到一处。
+- `totalWeeks: 20` / `?? 20` 两处硬编码改用 `defaultTotalWeeks`。
+- `AppDatabase.firstSemester()` 更名 `currentSemester()`：它按 `firstWeekMonday` 倒序取第一条，是"最近开始的学期"而非"最早"，原名已造成过一次误读。
+
+Validation:
+- `CONFIRMED` `flutter analyze`（`R:\`）：No issues found；`flutter test`：100/100 passed（较上轮 +16）。
+- `CONFIRMED` 新增测试覆盖：`termStatus` 的学期前/最后一天/结束后边界、`dateFor` 不夹取周次、导入差异（首次全为新增、无变化、单侧增删、手动课程不参与、改名不算差异）、清理器平台不可用时抛异常、课表页提示条在学期前后出现/在学期内不出现。
+- `CONFIRMED` Debug APK 构建成功（2026-09-11，增量 18.8 s）。
+- `BLOCKED` 真机验收未完成：执行期间 OnePlus PLC110 断开连接（`adb devices` 为空，重启 adb server 无效），清缓存实际效果、提示条与预览差异行的真机表现均未验证，转 TASK-032。
+
 ## 2026-09-11 - Agent（TASK-022 建立 Git 基线）
 
 Added:

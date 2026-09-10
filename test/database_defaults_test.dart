@@ -12,7 +12,7 @@ void main() {
     // 第二次启动：数据已存在，重复同步官方作息也必须保持幂等。
     await database.ensureDefaults();
 
-    expect(await database.firstSemester(), isNotNull);
+    expect(await database.currentSemester(), isNotNull);
     final sectionTimes = await database.allSectionTimes();
     expect(sectionTimes, hasLength(10));
     expect(sectionTimes.first.startTime, '08:20');
@@ -26,11 +26,11 @@ void main() {
     addTearDown(database.close);
 
     await database.ensureDefaults();
-    final semester = (await database.firstSemester())!;
+    final semester = (await database.currentSemester())!;
 
     expect(semester.firstWeekMonday, officialFirstWeekMonday);
     expect(semester.firstWeekMonday, DateTime(2026, 8, 31));
-    expect(semester.totalWeeks, 20);
+    expect(semester.totalWeeks, defaultTotalWeeks);
     // 2026-09-10 属于第 2 教学周；按“安装当天所在周的周一”会误判为第 1 周。
     expect(
       const SemesterService().currentWeek(semester, DateTime(2026, 9, 10)),

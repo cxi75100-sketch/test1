@@ -1,0 +1,88 @@
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:ncpu_timetable/app.dart';
+import 'package:ncpu_timetable/core/database/app_database.dart';
+import 'package:ncpu_timetable/features/timetable/providers/timetable_providers.dart';
+import 'package:ncpu_timetable/models/semester.dart';
+
+/// 本周一。用它推学期日期，测试就不依赖运行日期。
+DateTime _thisMonday() {
+  final now = DateTime.now();
+  return DateTime(
+    now.year,
+    now.month,
+    now.day,
+  ).subtract(Duration(days: now.weekday - 1));
+}
+
+/// 用一个指定开学日的学期启动 App。
+///
+/// 已有学期时 `ensureDefaults` 不会再补默认学期，因此它就是唯一的活动学期。
+Future<AppDatabase> _pumpAppWithSemester(
+  WidgetTester tester,
+  DateTime firstWeekMonday,
+) async {
+  final database = AppDatabase(executor: NativeDatabase.memory());
+  await database.upsertSemester(
+    Semester(
+      id: 'the-semester',
+      name: '测试学期',
+      firstWeekMonday: firstWeekMonday,
+      totalWeeks: 20,
+    ),
+  );
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [databaseProvider.overrideWithValue(database)],
+      child: const TimetableApp(),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return database;
+}
+
+/// 必须在测试体内收尾：pending timer 的检查发生在测试体返回时，
+/// 放进 `addTearDown` 就太晚了。
+Future<void> _disposeApp(WidgetTester tester, AppDatabase database) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(milliseconds: 1));
+  await database.close();
+  await tester.pump(const Duration(milliseconds: 1));
+}
+
+void main() {
+  testWidgets('学期已结束时提示更新学期设置', (tester) async {
+    // 30 周前开学、只配 20 周，今天必然在学期结束之后。
+    final database = await _pumpAppWithSemester(
+      tester,
+      _thisMonday().subtract(const Duration(days: 30 * 7)),
+    );
+
+    expect(find.textContaining('已超出本学期'), findsOneWidget);
+    expect(find.textContaining('点此更新学期设置'), findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('开学日期在未来时提示周次按第 1 周显示', (tester) async {
+    final database = await _pumpAppWithSemester(
+      tester,
+      _thisMonday().add(const Duration(days: 7)),
+    );
+
+    expect(find.textContaining('早于学期开始日'), findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('学期日期在范围内时不显示提示', (tester) async {
+    final database = await _pumpAppWithSemester(tester, _thisMonday());
+
+    expect(find.textContaining('点此更新学期设置'), findsNothing);
+
+    await _disposeApp(tester, database);
+  });
+}

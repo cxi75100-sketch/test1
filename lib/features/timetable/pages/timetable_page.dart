@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../models/course.dart';
 import '../../../models/semester.dart';
+import '../../../services/semester_service.dart';
 import '../providers/timetable_providers.dart';
 import '../widgets/course_card.dart';
 
@@ -74,7 +75,14 @@ class _ScheduleBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalWeeks = semester?.totalWeeks ?? 20;
+    final activeSemester = semester;
+    final totalWeeks = activeSemester?.totalWeeks ?? defaultTotalWeeks;
+    // 学期日期和今天对不上时必须提示：currentWeek 会把超出的周次封顶到
+    // totalWeeks，不提示的话用户只会看到周次一直停在第 N 周，以为课表没更新。
+    // 学期尚未加载出来时按“正常”处理，避免加载瞬间闪一下提示。
+    final termStatus = activeSemester == null
+        ? TermStatus.within
+        : const SemesterService().termStatus(activeSemester, DateTime.now());
     final counts = List.generate(
       7,
       (index) => courses.where((course) => course.weekday == index + 1).length,
@@ -93,6 +101,8 @@ class _ScheduleBody extends ConsumerWidget {
               : null,
           onCurrent: ref.read(selectedWeekProvider.notifier).goToCurrent,
         ),
+        if (termStatus != TermStatus.within && activeSemester != null)
+          _TermHintBanner(semester: activeSemester, status: termStatus),
         _WeekStrip(semester: semester, week: week, counts: counts),
         Expanded(
           child: courses.isEmpty
@@ -282,6 +292,61 @@ class _WeekStrip extends StatelessWidget {
   );
 }
 
+/// 学期日期与今天对不上时的提示条。
+///
+/// 没有这个提示时，学期设置过期的设备只会看到周次一直停在第 N 周，
+/// 用户无法分辨是本地学期日期过期，还是课表没有更新。
+class _TermHintBanner extends StatelessWidget {
+  const _TermHintBanner({required this.semester, required this.status});
+
+  final Semester semester;
+  final TermStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = semester.firstWeekMonday;
+    final message = status == TermStatus.before
+        ? '今天早于学期开始日 ${start.month}月${start.day}日，周次按第 1 周显示。'
+        : '今天已超出本学期 ${semester.totalWeeks} 周，周次会停在第 '
+              '${semester.totalWeeks} 周。';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      child: Material(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => context.push('/settings'),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 18,
+                  color: Colors.orange.shade800,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '$message\n点此更新学期设置。',
+                    style: const TextStyle(fontSize: 12, height: 1.4),
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: Colors.orange.shade800,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AgendaList extends StatelessWidget {
   const _AgendaList({
     required this.semester,
@@ -449,9 +514,8 @@ class _ErrorState extends StatelessWidget {
   );
 }
 
+/// 第 [week] 周星期 [weekday] 的日期；日期算法统一放在 [SemesterService]。
 DateTime? _dateFor(Semester? semester, int week, int weekday) {
   if (semester == null) return null;
-  return semester.firstWeekMonday.add(
-    Duration(days: (week - 1) * 7 + weekday - 1),
-  );
+  return const SemesterService().dateFor(semester, week, weekday);
 }
