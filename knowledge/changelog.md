@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-11 - Agent（TASK-021 教务导入真机端到端验收通过）
+
+Changed:
+- 导入预览的「相对上次导入」区块改为**始终显示**：差异为空时明示「与上次导入一致，没有新增或移除」。此前"差异为空就隐藏"会让常见情况（教务数据未变）下整个功能不可见，既看不出比较跑过，也让验收无从下手。
+- 新增 `test/import_preview_dialog_test.dart` 锁定三种状态：无旧数据不显示区块、差异为空明示"一致"、有增删时显示条数并列出被移除课程。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 103/103 passed。
+- `CONFIRMED` 用户在 OnePlus PLC110 上本人登录教务并完成导入；预览显示 27 条，差异区块显示"无变化"。
+- `CONFIRMED` 导入后 `source=ncpu` 的 id 集合指纹与导入前完全相同，替换等价、无丢失。
+- `CONFIRMED` 手动课程保留：rowid 由 `1..27` 变为 `29..55`，插入起点为 29 说明导入时 rowid 28（用户先加的手动课）仍存在；若被误删，重新插入会从 1 开始。
+- `CONFIRMED` 学期记录未被改动，SQLite `integrity_check=ok`。
+- 观测方法修正（重要）：**不能用 SQLite `change counter` 判断"是否发生过导入"** —— `ensureDefaults()` 每次冷启动都会幂等写 `section_times`，实测每启动一次 counter +1（19→20→21）。可靠信号是 `courses` 的隐式 rowid 位移。
+- 隐私：验收用的数据库副本与小组件载荷副本已全部删除；未记录账号、Cookie、Session 或 Token。
+
 ## 2026-09-11 - Agent（TASK-029 导入体验；TASK-030 学期逻辑卫生；TASK-031 学期日期提示）
 
 Added:

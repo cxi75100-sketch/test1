@@ -57,7 +57,7 @@ class ImportPreviewDialog extends StatelessWidget {
               '并替换上一次导入的课程（手动添加的课程不受影响）。',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            if (summary != null && !summary.isEmpty) ...[
+            if (summary != null) ...[
               const SizedBox(height: 12),
               _DiffSummary(diff: summary),
             ],
@@ -138,8 +138,11 @@ class _DiffSummary extends StatelessWidget {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 4),
+          // 无变化时也照常展示：这样才看得出比较确实跑过，而不是功能没生效。
           Text(
-            '新增 ${diff.added.length} 条 · 移除 ${diff.removed.length} 条',
+            diff.isEmpty
+                ? '与上次导入一致，没有新增或移除。'
+                : '新增 ${diff.added.length} 条 · 移除 ${diff.removed.length} 条',
             style: const TextStyle(fontSize: 13),
           ),
           if (diff.removed.isNotEmpty) ...[

@@ -12,6 +12,7 @@
 - NcpuTimetableParser：真实 `kbList` 关键字段、字段乱序、周次/节次回退、身份字段忽略与异常响应（12 个测试）。
 - NcpuAdapter：loginUrl、scheme/host 联合校验、空数据/异常/合法响应 sealed 结果（11 个测试）。
 - Import entry widget：设置页入口存在 + 导航到 WebView 页（2 个测试）。
+- ImportPreviewDialog widget：无旧数据时不显示比较区块、差异为空时明示「与上次导入一致」、有增删时显示条数并列出被移除课程（3 个测试）。
 - Import login widget：用户确认风险前只渲染候选 HTTP 风险门、不创建 WebView 加载状态（1 个测试）。
 - Widget payload builder：协议版本、学期字段、课程序列化、配色规则（含 colorKey 取绝对值）、节次时间（5 个测试）。
 - Widget sync：原生通道缺失时降级返回 false、启动快照含默认学期与 10 条节次时间、新增/删除课程后重新推送（4 个测试，用 `TestDefaultBinaryMessengerBinding` 打桩通道）。
@@ -24,6 +25,7 @@
 ## Passed
 
 - `flutter analyze`（在 `R:\` 下）：No issues found。
+- `flutter test`（2026-09-11 +08:00）：103 tests passed。
 - `flutter test`（2026-09-11 +08:00）：100 tests passed。
 - `flutter test`（2026-09-11 00:03 +08:00）：84 tests passed。
 - `flutter test`（2026-09-10 23:47 +08:00）：83 tests passed。
@@ -86,6 +88,13 @@
   - `CONFIRMED`：覆盖安装后冷启动触发小组件载荷重推，`firstWeekMonday=2026-08-31`、`totalWeeks=20`、`schemaVersion=1`。
   - `UNVERIFIED`：首页“第 2 周”文案未截屏确认（手机当时在前台使用，截屏被其他 App 浮窗覆盖）；该截图已立即删除。
   - 隐私处理：验收过程中的截图与数据库副本已全部删除；未输出账号、Cookie、Session 或 Token。截屏前须确认手机未被他人使用。
+- Android 真机（2026-09-11 TASK-021 教务导入端到端，OnePlus PLC110 / Android 16，序列号已隐去）：用户本人登录教务完成导入，Agent 只做导入前后的数据库比对。
+  - `CONFIRMED`：预览显示 27 条安排；新增的「相对上次导入」区块显示「与上次导入一致，没有新增或移除」（当日教务数据未变）。
+  - `CONFIRMED`：`source=ncpu` 27 条的 id 集合指纹导入前后完全相同，替换等价、无丢失。
+  - `CONFIRMED`：**手动课程保留** —— 用户先手动加一门课再导入，`courses` 隐式 rowid 由 `1..27` 变为 `29..55`。导入只删 `source='ncpu'`，插入取 `max(rowid)+1`；起点为 29 说明插入时 rowid 28（手动课）仍在。若被误删，表会变空、重新插入会从 1 开始，因此该形态可反证保留成功。用户随后自行删除该手动课。
+  - `CONFIRMED`：学期记录未被导入改动；SQLite `integrity_check=ok`。
+  - 观测方法（重要）：判断"是否发生过导入"**不能看 SQLite `change counter`** —— `ensureDefaults()` 每次冷启动都幂等写 `section_times`，实测每启动一次 +1（19→20→21）。可靠信号是 `courses` 的隐式 rowid 位移。
+  - 隐私：验收用的数据库副本、小组件载荷副本与临时文件均已删除；未记录账号、密码、Cookie、Session 或 Token。
 - Android 真机（2026-09-11 本轮改造验收，OnePlus PLC110 / Android 16，序列号已隐去）：设备首次连接时掉线，重新接入后完成。
   - `CONFIRMED`：`adb install -r -t` 覆盖安装成功，冷启动 `Status: ok` / `LaunchState: COLD`，logcat 无 `FATAL` / `AndroidRuntime` / `MissingPluginException` / `E/flutter`。
   - `CONFIRMED`：首页语义树显示「第 2 周 · 共 20 周 · 本周 13 条安排」；设置页显示「当前学期 · 20 周 · 开学周一 2026-08-31」。本轮改用 `uiautomator dump` 读取语义树代替截屏，避免拍到其他应用内容。
@@ -101,9 +110,9 @@
 
 ## Not Covered
 
-- 当前版本在真机上的完整教务导入验收：真实登录、课表预览条数/字段、确认写入、手动课程保留、重启后持久化（TASK-021）。
+- 导入预览「移除」分支的真机显示：当日教务数据未变，只观察到「无变化」；「有增删」的排版由 widget 测试覆盖。
 - 通知权限、时区、系统重启后的调度。
-- 教务重新导入后的替换持久化、手动课程保留与预览确认（已有课程的普通冷启动持久化已确认）。
+- 自动测试已覆盖重新导入的替换持久化与手动课程保留；真机侧已在 TASK-021 验证。
 - Release 签名（当前 Debug 用 Android Debug 证书；release 走 debug signingConfig，`android/app/build.gradle.kts` 已注明 TODO）。
 - Play Store 上传所需的 AAB / v3 签名 / 分包策略。
 - WebView 内当前版本的 JavaScript 取数与预览交互；App 不做 Cookie 管理或表单自动填充。

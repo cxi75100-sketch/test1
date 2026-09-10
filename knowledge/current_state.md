@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-11 01:35 +08:00
+2026-09-11 01:55 +08:00
 
 ## Project Boundary
 
@@ -14,7 +14,7 @@
 
 ## Current Milestone
 
-里程碑 1（本地课表）已完成 Android 真机基础验收；里程碑 2（教务导入主链路代码）和里程碑 3（Android 桌面小组件代码）均已达到自动化验证通过状态。教务真实接口已由真机脱敏采集确认，解析、预览、确认写入链路已实现；剩余工作主要是需要用户登录/主屏操作的端到端验收与本地通知。
+里程碑 1（本地课表）、里程碑 2（教务导入主链路）均已完成真机端到端验收 —— 用户本人登录导入并确认写入，替换等价且手动课程保留。里程碑 3（Android 桌面小组件）代码与数据链路已验证，仅剩主屏实际添加与渲染一项（TASK-019）。剩余工作：小组件主屏验收、本地通知（TASK-014）、release 分发准备。
 
 ## Working Features
 
@@ -45,7 +45,6 @@
 
 ## Current Blockers
 
-- `BLOCKED`（TASK-021）：教务重新导入需用户本人在 WebView 登录并确认预览；不得由 Agent 填写或保存账号密码。OnePlus PLC110 的数据库中已出现 27 条 `source=ncpu` 课程（14 门课），证明该完整链路在本机完成过一次真实写入，但仍需用户当场确认预览条数/字段、手动课程保留及再次导入结果；本轮新增的「新增/移除」差异行也要在这次真实导入中一并目视确认。
 - `BLOCKED`（TASK-019）：provider 注册和数据同步已在真机确认；主屏添加、渲染/缩放、跨天重算和点击打开 App 仍需用户在启动器手动添加小组件（vivo 或 OnePlus 任一即可）。
 
 ## Important Context
@@ -65,10 +64,12 @@
 
 ## Validation Snapshot
 
+- `CONFIRMED`（2026-09-11 01:50 +08:00，TASK-021）：教务导入真机端到端验收通过。用户本人登录完成导入；预览 27 条、差异区块显示「与上次导入一致，没有新增或移除」；`source=ncpu` 的 id 集合指纹导入前后完全相同（替换等价、无丢失）；**手动课程经 rowid 位移反证被正确保留**（`1..27` → `29..55`，插入起点 29 说明导入时 rowid 28 的手动课仍在）；学期记录未被改动，`integrity_check=ok`。
+- 观测方法修正：**不能用 SQLite `change counter` 判断是否发生过导入** —— `ensureDefaults()` 每次冷启动都会写 `section_times`，实测每启动一次 +1（19→20→21）。可靠信号是 `courses` 的隐式 rowid 位移。
 - `CONFIRMED`（2026-09-11 01:30 +08:00，TASK-032）：设备重新接入后在 OnePlus PLC110 / Android 16 上完成真机验收。清缓存**可归因生效**：教务页加载后 `cache/WebView/Default/HTTP Cache` 2649 KB → 离开导入页后 65 KB（另一轮 4437 → 65 KB）；对照实验中 `am force-stop` 强杀进程（不经 `dispose`）后缓存保持 1417 KB 不变，排除"WebView 销毁自身清理"的伪因果。Cookies 24 KB 与 Local Storage 均保留，符合 DEC-010。
 - `CONFIRMED`（2026-09-11 01:30 +08:00）：首页语义树显示「第 2 周 · 共 20 周 · 本周 13 条安排」，设置页显示「开学周一 2026-08-31」；学期在范围内故提示条不出现。此前的"首页第 2 周画面确认"改用 `uiautomator dump` 语义树完成，不再需要截屏。
-- `UNVERIFIED`：导入预览「新增/移除」差异行的真机显示，需在 TASK-021 真实导入时确认。
-- `CONFIRMED`（2026-09-11 01:05 +08:00）：`flutter analyze`（`R:\`）No issues found；`flutter test` 100/100 通过。
+- `UNVERIFIED`：导入预览「移除」分支的真机显示（当日教务数据未变，只观察到「无变化」；该分支由 `test/import_diff_test.dart` 覆盖）。
+- `CONFIRMED`（2026-09-11 01:05 +08:00）：`flutter analyze`（`R:\`）No issues found；`flutter test` 103/103 通过。
 - `CONFIRMED`（2026-09-11 00:03 +08:00）：`flutter analyze`（`R:\`）No issues found；`flutter test` 84/84 通过（新增默认学期起点测试）。
 - `CONFIRMED`（2026-09-11 00:05 +08:00）：Debug APK 构建成功（206,352,868 B，SHA1 `b24127bb6edb69a50a1c59b90ffea42651030725`），`adb install -r -t` 安装到 OnePlus PLC110 / Android 16 成功，冷启动无 Flutter/Android 致命异常。
 - `CONFIRMED`（2026-09-11 00:04 +08:00）：OnePlus PLC110 设备库 `first_week_monday` 已修正为 2026-08-31，`total_weeks=20`，SQLite `integrity_check=ok`，27 条课程记录未变；覆盖安装后小组件载荷同步 `firstWeekMonday=2026-08-31`。
@@ -82,7 +83,7 @@
 
 ## Recommended Next Action
 
-重新接入 Android 真机以完成 TASK-032（清缓存效果、学期提示条、导入预览差异行的真机验收）。设备可用后优先做 TASK-021 的教务导入预览确认与 TASK-019 的小组件主屏验收，这两项只能由用户在手机上完成。无需设备时下一步是里程碑 4（release 签名与包体积），但它必须在 TASK-021 之后 —— 换正式签名会强制卸载，本机课表数据会丢失。
+只剩 TASK-019（小组件主屏验收）：请用户在启动器长按 → 添加小组件 → 选择「南工课表」，按 `knowledge/home_widget.md` 的 9 步确认渲染、缩放、跨天与点击打开 App，并复检 `ISSUE-011`（provider 信息在 dumpsys 中全为 0）。做完这一项，V1 的功能验收即全部关闭，可以进入里程碑 4（release 签名与分 ABI 打包）——注意换正式签名必须先卸载，本机课表与登录态会丢，因此只能排在验收之后。
 
 ## Handoff
 
@@ -94,17 +95,17 @@
 
 ### What is verified
 
-- 源码静态检查与 100 个 Dart/Flutter 测试通过。
+- 源码静态检查与 103 个 Dart/Flutter 测试通过。
 - 13 个 Android 原生小组件 JVM 测试通过（本轮未改动 Kotlin，未重跑，最近一次结果仍有效）。
 - 真实教务系统类型、登录入口、核心课表端点、菜单号和 `kbList` 关键字段已通过真机脱敏采集确认。
+- **教务导入端到端已在真机验收通过（TASK-021）**：用户本人登录 → 预览 27 条 → 确认写入 → 替换等价（id 指纹不变）→ 手动课程经 rowid 位移反证被保留。
 - 最新 Debug APK 已在 vivo V1981A 上覆盖安装通过冷启动、首页渲染、持久化和致命日志检查。
 - 2026-09-11 之前的版本已在 OnePlus PLC110（Android 16）全新安装并通过冷启动与致命日志检查；该机默认学期起点已修正为 2026-08-31，小组件载荷同步。
 - 2026-09-11 本轮改动（TASK-029/030/031）已在 OnePlus PLC110 覆盖安装并冷启动通过；HTTP 缓存清理经对照实验确认可归因生效且保留登录态；首页「第 2 周」经 uiautomator 语义树确认。
-- `officialFirstWeekMonday` 与 `ensureDefaults()` 的关系、`termStatus` 边界、导入差异归类、清理器不抛异常、提示条出现条件均有自动化测试锁定。
+- `officialFirstWeekMonday` 与 `ensureDefaults()` 的关系、`termStatus` 边界、导入差异归类、清理器不抛异常、提示条与预览差异区出现条件均有自动化测试锁定。
 
 ### What remains unverified
 
-- 导入预览「新增/移除」差异行的真机显示（TASK-021 的真实导入中一并确认）。
-- 当前版本重新执行教务导入时的预览、确认替换与手动课程保留。
-- 小组件在启动器上的实际添加、渲染、缩放、跨天与点击行为。
+- 导入预览「移除」分支的真机显示（当日教务数据未变）。
+- 小组件在启动器上的实际添加、渲染、缩放、跨天与点击行为（TASK-019）。
 - iOS 构建与运行；V1 不阻塞。
