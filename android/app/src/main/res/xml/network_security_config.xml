@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  最小范围明文（HTTP）允许列表。
+  仅允许 NcpuSchoolConfig 中确认的学校域名进行明文连接；
+  不得添加 usesCleartextTraffic="true" 全局开关。
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">jwxt.ncpu.edu.cn</domain>
+    </domain-config>
+</network-security-config>

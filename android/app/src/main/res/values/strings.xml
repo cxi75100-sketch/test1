@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_app_name">南工课表</string>
+    <string name="widget_description">显示今天要上的课</string>
+    <string name="widget_header">第 %1$d 周 · %2$s</string>
+    <string name="widget_no_class">今天没有课</string>
+    <string name="widget_not_started">学期还没开始</string>
+    <string name="widget_finished">学期已结束</string>
+    <string name="widget_open_app_hint">打开 App 完成课表设置</string>
+    <string name="widget_overflow">还有 %1$d 门课</string>
+    <string-array name="widget_weekdays">
+        <item>周一</item>
+        <item>周二</item>
+        <item>周三</item>
+        <item>周四</item>
+        <item>周五</item>
+        <item>周六</item>
+        <item>周日</item>
+    </string-array>
+</resources>
