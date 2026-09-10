@@ -19,7 +19,10 @@ Validation:
 - `CONFIRMED` `flutter analyze`（`R:\`）：No issues found；`flutter test`：100/100 passed（较上轮 +16）。
 - `CONFIRMED` 新增测试覆盖：`termStatus` 的学期前/最后一天/结束后边界、`dateFor` 不夹取周次、导入差异（首次全为新增、无变化、单侧增删、手动课程不参与、改名不算差异）、清理器平台不可用时抛异常、课表页提示条在学期前后出现/在学期内不出现。
 - `CONFIRMED` Debug APK 构建成功（2026-09-11，增量 18.8 s）。
-- `BLOCKED` 真机验收未完成：执行期间 OnePlus PLC110 断开连接（`adb devices` 为空，重启 adb server 无效），清缓存实际效果、提示条与预览差异行的真机表现均未验证，转 TASK-032。
+- `CONFIRMED`（TASK-032，设备重新接入后）清缓存真机可归因生效：教务页加载后 `cache/WebView/Default/HTTP Cache` 2649 KB → 离开导入页后 65 KB（另一轮 4437 → 65 KB）；对照实验中 `am force-stop` 强杀进程（不经 `dispose`）后缓存保持 1417 KB 不变，排除“WebView 销毁自身清理”的伪因果；Cookies 24 KB 与 Local Storage 均保留。
+- `CONFIRMED` 首页显示「第 2 周 · 共 20 周 · 本周 13 条安排」，学期内在范围故提示条不出现；越界态排版改由真机同宽视口的 widget 测试覆盖，未改写真机学期数据。
+- 观察记录（易误判）：WebView 首次初始化时 `app_webview/` 会由 4318 KB 自行降到 234 KB，与本轮改动无关，勿当作清缓存效果。
+- `UNVERIFIED` 导入预览「新增/移除」差异行的真机显示，需在 TASK-021 真实导入时确认。
 
 ## 2026-09-11 - Agent（TASK-022 建立 Git 基线）
 

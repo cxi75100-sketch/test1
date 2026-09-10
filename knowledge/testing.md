@@ -86,7 +86,14 @@
   - `CONFIRMED`：覆盖安装后冷启动触发小组件载荷重推，`firstWeekMonday=2026-08-31`、`totalWeeks=20`、`schemaVersion=1`。
   - `UNVERIFIED`：首页“第 2 周”文案未截屏确认（手机当时在前台使用，截屏被其他 App 浮窗覆盖）；该截图已立即删除。
   - 隐私处理：验收过程中的截图与数据库副本已全部删除；未输出账号、Cookie、Session 或 Token。截屏前须确认手机未被他人使用。
-- Android 真机（2026-09-11 本轮改造验收）：`BLOCKED`。执行期间 OnePlus PLC110 断开连接，`adb devices` 为空、`adb kill-server` 重启后仍无设备，因此 TASK-029/030/031 全部未做真机验收 —— 清缓存是否真的清掉 `app_webview/` 体积、清理后是否仍保留登录态、学期提示条与导入预览差异行的实际排版都未确认，转 TASK-032。
+- Android 真机（2026-09-11 本轮改造验收，OnePlus PLC110 / Android 16，序列号已隐去）：设备首次连接时掉线，重新接入后完成。
+  - `CONFIRMED`：`adb install -r -t` 覆盖安装成功，冷启动 `Status: ok` / `LaunchState: COLD`，logcat 无 `FATAL` / `AndroidRuntime` / `MissingPluginException` / `E/flutter`。
+  - `CONFIRMED`：首页语义树显示「第 2 周 · 共 20 周 · 本周 13 条安排」；设置页显示「当前学期 · 20 周 · 开学周一 2026-08-31」。本轮改用 `uiautomator dump` 读取语义树代替截屏，避免拍到其他应用内容。
+  - `CONFIRMED`：**HTTP 缓存清理可归因生效**。教务页加载后 `cache/WebView/Default/HTTP Cache` = 2649 KB，返回键离开导入页后 = 65 KB（另一轮 4437 → 65 KB）。
+  - `CONFIRMED`：对照实验排除伪因果 —— `am force-stop` 强杀进程（不经过 Dart `dispose`）后 HTTP Cache 保持 1417 KB 不变。
+  - `CONFIRMED`：按 DEC-010 保留的登录态确实保留 —— `app_webview/Default/Cookies` 24 KB、`Local Storage/leveldb` 均在。
+  - 注意：`app_webview/` 在 WebView 首次初始化时会自行由 4318 KB 降到 234 KB，与本次改动无关；观测清缓存要看 `cache/WebView/Default/HTTP Cache`，不是 `app_webview/`。
+  - 未覆盖：导入预览「新增/移除」差异行的真机显示（需真实导入，见 TASK-021）。
 - Android 模拟器：未安装，如需可用需追加 `sdkmanager "emulator" "system-images;android-36;google_apis;x86_64"`。
 - WebView / 教务导入：`PARTIAL`。用户曾在真机通过 Debug 采集工具登录并打开课表页，已取得脱敏接口形状；当前源码又加入正式解析、预览和确认写入，但尚未对这一完整版本做真机端到端验收（TASK-021）。
 - 桌面小组件：`BLOCKED`。原生渲染、添加到主屏、缩放、跨天重算、点击打开 App 均无设备可验证；验收步骤见 `knowledge/home_widget.md`。

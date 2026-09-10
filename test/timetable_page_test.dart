@@ -20,10 +20,17 @@ DateTime _thisMonday() {
 /// 用一个指定开学日的学期启动 App。
 ///
 /// 已有学期时 `ensureDefaults` 不会再补默认学期，因此它就是唯一的活动学期。
+///
+/// 视口按真机设置（1272x2800 @ 560dpi ≈ 363x800 逻辑像素）。测试宽度比
+/// 默认的 800 窄得多，提示条若有排版溢出会在这里直接失败，而不必改真机数据。
 Future<AppDatabase> _pumpAppWithSemester(
   WidgetTester tester,
   DateTime firstWeekMonday,
 ) async {
+  tester.view.physicalSize = const Size(1272, 2800);
+  tester.view.devicePixelRatio = 3.5;
+  addTearDown(tester.view.reset);
+
   final database = AppDatabase(executor: NativeDatabase.memory());
   await database.upsertSemester(
     Semester(

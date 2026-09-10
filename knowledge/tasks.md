@@ -10,11 +10,18 @@
 
 ## Blocked
 
-- [ ] TASK-032 TASK-029/030/031 的真机验收 —— `BLOCKED`：执行期间 OnePlus PLC110 断开连接（`adb devices` 为空，重启 adb server 后仍无设备），以下均未在真机确认：清缓存是否真的清掉 `app_webview/` 体积且保留登录态、周次失效提示条的实际显示、导入预览新增/移除行的排版。需重新接入设备后执行。
-- [ ] TASK-021 教务课表导入真机端到端验收 —— `BLOCKED`：接口、解析器、预览与本地替换写入代码均已完成，真机现已可连接且生产库中已有教务课程；仍需用户本人在 WebView 完成登录并当场确认预览条数/字段、手动课程保留及再次导入结果。不得自动填写或保存账号密码。
+- [ ] TASK-021 教务课表导入真机端到端验收 —— `BLOCKED`：接口、解析器、预览与本地替换写入代码均已完成，真机现已可连接且生产库中已有教务课程；仍需用户本人在 WebView 完成登录并当场确认预览条数/字段、手动课程保留及再次导入结果。不得自动填写或保存账号密码。导入预览新增的「新增/移除」差异行也需在这次真实导入中一并目视确认。
 - [ ] TASK-019 桌面小组件真机验收 —— `BLOCKED`：真机已确认 provider 注册和 Dart → SharedPreferences 数据同步；仍需用户在 vivo 启动器手动添加小组件，才能验收主屏渲染、缩放、跨天重算与点击打开 App（验收步骤见 `knowledge/home_widget.md`）。
 
 ## Done
+
+- [x] TASK-032 TASK-029/030/031 的真机验收（2026-09-11 完成）：设备重新接入后在 OnePlus PLC110 / Android 16 上验收。
+  - `CONFIRMED` 清缓存可归因生效：教务页加载后 `cache/WebView/Default/HTTP Cache` 为 2649 KB，返回键离开导入页后降到 65 KB；另一轮为 4437 KB → 65 KB。
+  - `CONFIRMED` 对照实验排除伪因果：`am force-stop` 强杀进程（不经过 Dart `dispose`）后 HTTP Cache 保持 1417 KB 不变，说明下降来自 `clearHttpCache()`，而非 WebView 销毁时的自身清理。
+  - `CONFIRMED` 登录态按设计保留：`app_webview/Default/Cookies` 仍为 24 KB，`Local Storage/leveldb` 保留。
+  - `CONFIRMED` 首页显示「第 2 周 · 共 20 周 · 本周 13 条安排」，学期日期在范围内因此提示条不出现（此前因截屏被浮窗遮挡而挂起的画面确认，本轮改用 uiautomator 语义树完成，无需截屏）。
+  - 越界态的提示条排版由 `test/timetable_page_test.dart` 在真机同宽视口（1272x2800 @ 560dpi ≈ 363x800 逻辑像素）下渲染验证；未为验证而改写真机学期日期。
+  - 未覆盖：导入预览「新增/移除」差异行的真机显示，需在 TASK-021 的真实导入中一并确认。
 
 - [x] TASK-031 学期日期失效提示（2026-09-11 完成）：`currentWeek()` 会把超出学期的周次封顶到 `totalWeeks`，"学期已结束"与"第 20 周"不可区分。新增 `TermStatus{before,within,after}` 与 `SemesterService.termStatus`，把 `timetable_page` 私有的日期算法抽成 `SemesterService.dateFor`，并在周概览与日期条之间加提示条（点击跳设置）。`flutter analyze` 无问题、`flutter test` 100/100（新增 9 个本学期相关测试）。
 

@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-11 01:10 +08:00
+2026-09-11 01:35 +08:00
 
 ## Project Boundary
 
@@ -45,8 +45,7 @@
 
 ## Current Blockers
 
-- `BLOCKED`（TASK-032）：TASK-029/030/031 的真机验收未完成。执行期间 OnePlus PLC110 断开连接，`adb devices` 为空且重启 adb server 无效；清缓存的实际效果、提示条与导入预览差异行的真机排版均未验证。
-- `BLOCKED`（TASK-021）：教务重新导入需用户本人在 WebView 登录并确认预览；不得由 Agent 填写或保存账号密码。OnePlus PLC110 的数据库中已出现 27 条 `source=ncpu` 课程（14 门课），证明该完整链路在本机完成过一次真实写入，但仍需用户当场确认预览条数/字段、手动课程保留及再次导入结果。
+- `BLOCKED`（TASK-021）：教务重新导入需用户本人在 WebView 登录并确认预览；不得由 Agent 填写或保存账号密码。OnePlus PLC110 的数据库中已出现 27 条 `source=ncpu` 课程（14 门课），证明该完整链路在本机完成过一次真实写入，但仍需用户当场确认预览条数/字段、手动课程保留及再次导入结果；本轮新增的「新增/移除」差异行也要在这次真实导入中一并目视确认。
 - `BLOCKED`（TASK-019）：provider 注册和数据同步已在真机确认；主屏添加、渲染/缩放、跨天重算和点击打开 App 仍需用户在启动器手动添加小组件（vivo 或 OnePlus 任一即可）。
 
 ## Important Context
@@ -62,17 +61,17 @@
 - 小组件协议为 `schemaVersion=1`；修改时必须同步 Dart/Kotlin 常量与两侧测试。
 - 当前学期开学第一周周一为 `2026-08-31`（用户确认，且与教学周历一致）；`2026-09-10` 起属于第 2 周。该值已固化为代码默认常量，两台真机的生产库和小组件载荷均已同步为该日期。
 - 两台真机：vivo V1981A（Android 12 / API 31，2026-09-10 完成覆盖安装与冷启动验收）与 OnePlus PLC110（Android 16 / API 36 / arm64-v8a，2026-09-11 完成全新安装）。
-- `CONFIRMED`：Git 仓库尚无任何 commit，当前项目文件全部显示为 untracked；在建立基线前没有可依赖的版本历史或恢复点（TASK-022）。
+- `CONFIRMED`：Git 基线已建立并推送 —— `master` 分支 4 个提交，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库），本地与远端一致（TASK-022 已完成）。
 
 ## Validation Snapshot
 
-- `CONFIRMED`（2026-09-11 01:05 +08:00）：`flutter analyze`（`R:\`）No issues found；`flutter test` 100/100 通过（较上轮 +16：导入差异 6、学期状态与日期 6、提示条 3、清理器 1）。
-- `CONFIRMED`（2026-09-11 01:08 +08:00）：Debug APK 构建成功（增量 18.8 s）。
-- `BLOCKED`（TASK-032）：本轮三项改造均未做真机验收 —— OnePlus PLC110 在执行期间断开连接，重启 adb server 后 `adb devices` 仍为空。
+- `CONFIRMED`（2026-09-11 01:30 +08:00，TASK-032）：设备重新接入后在 OnePlus PLC110 / Android 16 上完成真机验收。清缓存**可归因生效**：教务页加载后 `cache/WebView/Default/HTTP Cache` 2649 KB → 离开导入页后 65 KB（另一轮 4437 → 65 KB）；对照实验中 `am force-stop` 强杀进程（不经 `dispose`）后缓存保持 1417 KB 不变，排除"WebView 销毁自身清理"的伪因果。Cookies 24 KB 与 Local Storage 均保留，符合 DEC-010。
+- `CONFIRMED`（2026-09-11 01:30 +08:00）：首页语义树显示「第 2 周 · 共 20 周 · 本周 13 条安排」，设置页显示「开学周一 2026-08-31」；学期在范围内故提示条不出现。此前的"首页第 2 周画面确认"改用 `uiautomator dump` 语义树完成，不再需要截屏。
+- `UNVERIFIED`：导入预览「新增/移除」差异行的真机显示，需在 TASK-021 真实导入时确认。
+- `CONFIRMED`（2026-09-11 01:05 +08:00）：`flutter analyze`（`R:\`）No issues found；`flutter test` 100/100 通过。
 - `CONFIRMED`（2026-09-11 00:03 +08:00）：`flutter analyze`（`R:\`）No issues found；`flutter test` 84/84 通过（新增默认学期起点测试）。
 - `CONFIRMED`（2026-09-11 00:05 +08:00）：Debug APK 构建成功（206,352,868 B，SHA1 `b24127bb6edb69a50a1c59b90ffea42651030725`），`adb install -r -t` 安装到 OnePlus PLC110 / Android 16 成功，冷启动无 Flutter/Android 致命异常。
 - `CONFIRMED`（2026-09-11 00:04 +08:00）：OnePlus PLC110 设备库 `first_week_monday` 已修正为 2026-08-31，`total_weeks=20`，SQLite `integrity_check=ok`，27 条课程记录未变；覆盖安装后小组件载荷同步 `firstWeekMonday=2026-08-31`。
-- `UNVERIFIED`：OnePlus PLC110 首页“第 2 周”文案未截屏确认——截屏时手机处于前台使用中，画面被其他 App 浮窗覆盖，该截图已立即删除。
 - `CONFIRMED`（2026-09-10 22:33 +08:00）：`flutter analyze`（`R:\`）No issues found。
 - `CONFIRMED`（2026-09-10 23:47 +08:00）：`flutter test` 83/83 通过；含教学楼作息解析、数据库官方默认时间、小组件载荷和课程卡时间展示测试。
 - `CONFIRMED`：`gradlew :app:testDebugUnitTest` 构建成功；13 tests / 0 failures / 0 errors / 0 skipped。
@@ -100,12 +99,12 @@
 - 真实教务系统类型、登录入口、核心课表端点、菜单号和 `kbList` 关键字段已通过真机脱敏采集确认。
 - 最新 Debug APK 已在 vivo V1981A 上覆盖安装通过冷启动、首页渲染、持久化和致命日志检查。
 - 2026-09-11 之前的版本已在 OnePlus PLC110（Android 16）全新安装并通过冷启动与致命日志检查；该机默认学期起点已修正为 2026-08-31，小组件载荷同步。
+- 2026-09-11 本轮改动（TASK-029/030/031）已在 OnePlus PLC110 覆盖安装并冷启动通过；HTTP 缓存清理经对照实验确认可归因生效且保留登录态；首页「第 2 周」经 uiautomator 语义树确认。
 - `officialFirstWeekMonday` 与 `ensureDefaults()` 的关系、`termStatus` 边界、导入差异归类、清理器不抛异常、提示条出现条件均有自动化测试锁定。
 
 ### What remains unverified
 
-- 本轮（TASK-029/030/031）改动的真机表现：清缓存是否真的缩小 `app_webview/` 且保留登录态、提示条排版、导入预览差异行排版（TASK-032，缺设备）。
-- OnePlus PLC110 首页“第 2 周”画面确认。
+- 导入预览「新增/移除」差异行的真机显示（TASK-021 的真实导入中一并确认）。
 - 当前版本重新执行教务导入时的预览、确认替换与手动课程保留。
 - 小组件在启动器上的实际添加、渲染、缩放、跨天与点击行为。
 - iOS 构建与运行；V1 不阻塞。
