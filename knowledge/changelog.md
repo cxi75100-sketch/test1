@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-11 - Agent（小组件溢出验证失败并回退，记录编码陷阱）
+
+Incident（Agent 操作失误，非代码缺陷）：
+- 为验证小组件「还有 N 门课」溢出分支，本 Agent 用 Git Bash 的 `sqlite3.exe` 往真机库注入了 6 条含中文的临时课。**Windows 控制台为 GBK，入库字节不是合法 UTF-8**，Drift 读 TEXT 列时抛 `FormatException: Missing extension byte (at offset 5)`，`watchCourses` 整体失败：App 课表页显示「课表加载失败」，小组件因读同一份数据而静默降级、不再推送。
+- `integrity_check` 与行数均正常，所以**故障库在 SQL 层面看起来完全健康**，靠 App 的错误文案才定位到编码问题。
+
+Resolution：
+- 写回改动前的库备份，故障消失。`CONFIRMED` 25 秒内恢复：App 语义节点由 6（错误态）恢复为 21，显示「第 2 周 · 共 20 周 · 本周 13 条安排」；小组件恢复「第 2 周 · 周五」+ 3 行课程，`mViewMode == VIEW_MODE_ERROR` 归零，载荷 27 条且无临时数据残留。
+- 临时文件与注入数据已全部清除；课程未丢失（27 条 ncpu 不变）。
+
+Added:
+- `knowledge/testing.md` 的 Tooling Note 新增「真机数据库注入的编码陷阱」：只注入 ASCII 值或改用 Python 写库；`integrity_check` 不能证明 App 可读；改库前必备份；写入前须确认进程已真正退出（否则 SQLite 页缓存会返回旧数据）。
+
+Status: TASK-019 的「还有 N 门课」溢出分支**仍未验证**，本轮尝试已回退；其余小组件验收项（添加、渲染、点击打开 App）保持已确认。
+
 ## 2026-09-11 - Agent（TASK-019 小组件真机验收；修复 RemoteViews 布局缺陷）
 
 Fixed:

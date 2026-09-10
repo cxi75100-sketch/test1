@@ -120,6 +120,11 @@
 
 ## Tooling Note
 
+- **真机数据库注入的编码陷阱（2026-09-11 踩到，造成 App 课表加载失败）**：从 Git Bash 调用 `sqlite3.exe` 执行含中文的 SQL 时，Windows 控制台是 GBK，**入库字节是 GBK 而不是 UTF-8**。Drift 读取 TEXT 列时按 UTF-8 解码，遇到非法字节抛 `FormatException: Missing extension byte`，导致 `watchCourses` 整体失败 → 课表页显示「课表加载失败」；小组件读同一份数据也静默降级、不再推送。
+  - 规则：用 `sqlite3.exe` 注入数据时**只用 ASCII 值**；需要中文就改用 Python（显式 UTF-8 写库）。
+  - `integrity_check=ok` **不能证明数据可被 App 正确读取** —— 编码问题 SQLite 不报错，必须打开 App 界面确认。
+  - 改库前先 `cp` 一份备份文件；出问题直接写回备份即可恢复（本轮即如此恢复，且未丢失课程）。
+  - 写入前必须 `am force-stop` **并确认 `pidof` 为空**：进程还活着时它持有 SQLite 页缓存，会继续读到旧数据（本轮也踩到）。
 - Flutter 3.47.2 在中文工作区直接 `flutter analyze` 会触发 LSP JSON 截断异常。
 - 使用临时 ASCII 盘符 `R:`（`subst R: "D:\桌面\课程表"`）后分析和测试均通过。
 - 建立 `R:` 时，Git Bash 直接把中文路径传给 `cmd //c subst` 会因 UTF-8/GBK 编码不一致失败；改用 `powershell -EncodedCommand <Base64 UTF-16LE>` 稳定成功。
