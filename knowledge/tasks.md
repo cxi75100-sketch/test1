@@ -16,6 +16,8 @@
 
 ## Done
 
+- [x] TASK-038 切换本仓库 Git 提交邮箱并推送已验证修复（2026-09-11 完成）：仅设置仓库级 `user.name` / `user.email`，不影响全局 Git 配置，不改写前 9 个提交。提交前扫描确认 17 个文件无邮箱明文、会话凭据赋值或构建产物；`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测成功。修复提交 `40c75cd` 已推送到 Gitee `master`，本地、tracking 与远端读回一致。
+
 - [x] TASK-037 修复导入预览批量修改溢出（2026-09-11 完成）：将差异明细、课程列表和提示合并进最大为视口高度 65% 的单一滚动区，按钮保持在滚动区外；新增 27 条修改、360×800 视口回归测试，验证无异常、可滚到最后一条修改和课程列表底部、确认按钮始终可点。修正 `home_widget.md` 的旧接口名和 Zcode 报告的知识库文件计数。`dart format --set-exit-if-changed` 通过、`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测强制重跑成功。未操作真机、Git 历史或远端。
 
 - [x] TASK-036 独立复核 TASK-035 Zcode 整改（2026-09-11 完成）：核心差异逻辑、`flutter analyze`、`flutter test` 111/111 与 Android 原生单测强制重跑均通过；但构造 27 条 `changed` 的 360×800 widget 场景稳定复现 `RenderFlex overflowed by 698 pixels`，TASK-035 仅部分验收、暂不建议提交。另发现 `home_widget.md` 仍引用已删除的 `firstSemester`，交付报告的知识库文件计数不一致。完整复核见 `knowledge/review_2026-09-11_task035.md`。

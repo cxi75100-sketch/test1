@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-11 20:22 +08:00
+2026-09-11 20:43 +08:00
 
 ## Project Boundary
 
@@ -60,10 +60,11 @@
 - 小组件协议为 `schemaVersion=1`；修改时必须同步 Dart/Kotlin 常量与两侧测试。
 - 当前学期开学第一周周一为 `2026-08-31`（用户确认，且与教学周历一致）；`2026-09-10` 起属于第 2 周。该值已固化为代码默认常量，两台真机的生产库和小组件载荷均已同步为该日期。
 - 两台真机：vivo V1981A（Android 12 / API 31，2026-09-10 完成覆盖安装与冷启动验收）与 OnePlus PLC110（Android 16 / API 36 / arm64-v8a，2026-09-11 完成全新安装）。
-- `CONFIRMED`：Git 基线已建立并推送 —— `master` 当前 9 个提交，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库），本地与远端一致（TASK-022 已完成；提交邮箱隐私问题见本次审查 P2-3）。
+- `CONFIRMED`：Git 基线已建立并推送 —— `master` 当前 10 个提交，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库），本地与远端一致；TASK-035–037 修复已以 `40c75cd` 推送。后续提交使用用户指定的仓库级专用邮箱，未改写前 9 个提交的历史。
 
 ## Validation Snapshot
 
+- `CONFIRMED`（2026-09-11 20:43 +08:00，TASK-038）：用户确认后已将 Git 作者邮箱仅配置在本仓库，不改全局配置；提交 `40c75cd` 的 author/committer 均为新邮箱。提交前扫描确认暂存差异无邮箱明文、会话凭据赋值或构建产物；`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测重跑成功。本地 `HEAD`、`origin/master` 与 Gitee `refs/heads/master` 均为 `40c75cd`。
 - `CONFIRMED`（2026-09-11 20:22 +08:00，TASK-037）：TASK-036 发现的批量修改弹窗溢出已修复；差异明细、课程列表与提示共用最大为视口高度 65% 的单一滚动区，按钮固定。27 条修改、360×800 视口回归测试确认无异常，可滚到最后一条修改和列表底部；`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测强制重跑成功。文档旧接口名和计数同步修正。
 - `PARTIAL`（2026-09-11 20:14 +08:00，TASK-036）：独立重跑 `flutter analyze`、`flutter test` 111/111、Android 原生单测均通过；但 27 条课程同时发生详情变化时，导入预览在 360×800 视口可复现 `RenderFlex overflowed by 698 pixels`。TASK-035 暂不建议提交，需先给修改明细增加有界滚动并补批量回归测试。详见 `knowledge/review_2026-09-11_task035.md`。
 - `CONFIRMED`（2026-09-11 20:05 +08:00，TASK-035）：Zcode 修改任务书整改完成。`flutter analyze` 无问题、`flutter test` **111/111**、`gradlew :app:testDebugUnitTest --rerun` 13/13。本轮修复：导入差异新增 `changed`（同 id 逐字段内容比较）、`next` 双侧过滤手动课程、知识库过期结论同步。**未改真机生产数据、未重写 Git 历史、未提交未推送**。
@@ -89,7 +90,7 @@
 
 只剩 TASK-019 的剩余验收项：请用户在启动器按 `knowledge/home_widget.md` 的步骤复检 (a) 在 App 内增删一节今天的课 → 回主屏看小组件是否即时刷新；(b) 调整小组件尺寸 → 是否显示「还有 N 门课」（正常课量下需先有足够的当天课程，但**不得再直接改真机生产库**制造数据）；(c) 跨天重算建议改学期开学周一而非系统日期。做完这些，V1 的功能验收即全部关闭，可以进入里程碑 4（release 签名与分 ABI 打包）——注意换正式签名必须先卸载，本机课表与登录态会丢，因此只能排在验收之后。
 
-另有一项等待用户决定：公开仓库 9 个提交的作者邮箱为个人 Gmail（详见 `knowledge/zcode_fix_request_2026-09-11.md` 第四节）。在用户给出目标邮箱前不猜测、不修改配置、不重写历史。
+提交邮箱决策已关闭：用户已指定后续使用的专用邮箱，仅写入本仓库 Git 配置。历史 9 个提交不改写；若以后需要清理历史，必须作为独立高风险任务再确认。
 
 ## Handoff
 
@@ -102,7 +103,7 @@
 
 ### What is verified
 
-- 源码静态检查与 111 个 Dart/Flutter 测试通过。
+- 源码静态检查与 112 个 Dart/Flutter 测试通过。
 - 13 个 Android 原生小组件 JVM 测试通过（2026-09-11 `--rerun` 强制重跑确认 13/13；本轮未改动 Kotlin）。
 - 真实教务系统类型、登录入口、核心课表端点、菜单号和 `kbList` 关键字段已通过真机脱敏采集确认。
 - **教务导入端到端已在真机验收通过（TASK-021）**：用户本人登录 → 预览 27 条 → 确认写入 → 替换等价（id 指纹不变）→ 手动课程经 rowid 位移反证被保留。

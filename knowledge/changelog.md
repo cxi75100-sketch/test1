@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-11 - Agent（TASK-038 切换仓库提交邮箱并推送修复）
+
+- 按用户确认将 Git 作者邮箱仅配置在本仓库，保留全局配置与前 9 个提交历史不变。
+- 提交前确认 17 个文件无邮箱明文、会话凭据赋值或构建产物；`git diff --cached --check` 通过。
+- `flutter analyze` 无问题，`flutter test` 112/112，Android 原生单测在 `R:\android` 强制重跑成功。
+- TASK-035–037 修复以 `40c75cd` 提交并推送到 Gitee `master`；本地 `HEAD`、`origin/master` 与远端 `refs/heads/master` 读回一致。
+
 ## 2026-09-11 - Agent（TASK-037 修复批量修改弹窗溢出）
 
 - `ImportPreviewDialog` 改为有界单滚动区：最大高度为当前视口的 65%，差异明细、课程列表与底部提示统一滚动，确认/取消按钮固定在外部。
