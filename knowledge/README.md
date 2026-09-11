@@ -20,6 +20,10 @@
 - `testing.md`：测试范围与结果
 - `changelog.md`：实质变更记录
 - `incident_2026-09-11_db_injection.md`：事故报告 —— 真机数据库注入因 GBK 编码导致 App 课表加载失败
+- `review_2026-09-11_zcode_gitee.md`：2026-09-11 Zcode 改动与 Gitee 仓库审查报告
+- `zcode_fix_request_2026-09-11.md`：审查整改任务书（交 Zcode 执行）
+- `zcode_fix_report_2026-09-11.md`：整改交付报告（含未改动清单与验收对照）
+- `review_2026-09-11_task035.md`：TASK-035 独立复核（含批量修改弹窗溢出证据）
 - `android_setup.md`：Android 工具链配置与验收交接
 - `android_agent_prompt.md`：可直接交给环境配置 Agent 的提示词
 

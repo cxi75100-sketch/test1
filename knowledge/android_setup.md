@@ -29,7 +29,7 @@ Status: Completed (TASK-015, 2026-09-10 00:01 +08:00)
 5. `CONFIRMED` APK SHA256：`1daf867fc31a15f053c1ef17f69f109110bcd061f1e85a6e1ccd632c1222aa06`。
 6. `CONFIRMED` 2026-09-10 复核 `apksigner`：v2 签名通过，Signer `CN=Android Debug`，RSA 2048。
 7. `CONFIRMED` 2026-09-10 复核 `aapt2`：compileSdk/targetSdk 36、minSdk 24、应用名“南工课表”，仅声明 INTERNET 与动态广播接收器内部权限。
-8. `BLOCKED` `adb devices -l` 为空、Flutter 无 Android 设备；真机/模拟器运行属于 TASK-016，尚未通过。
+8. `BLOCKED`（2026-09-10 当时快照，后续已解除）`adb devices -l` 为空、Flutter 无 Android 设备；真机/模拟器运行属于 TASK-016，当时尚未通过。TASK-016 已由同日晚间真机验收完成，见 `knowledge/testing.md`。
 
 外部交接报告：`C:\Users\ninan\.qoderworkcn\workspace\mtu9gimj8t6a7xm4\outputs\南工课表_Android工具链交接报告_20260910.md`。
 

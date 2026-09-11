@@ -29,7 +29,7 @@
 课程增删改 / 学期设置 / App 启动 / App 回到前台
         ↓
 WidgetSync（同一轮数据变化只推一次）
-        ↓  查库取快照：firstSemester + watchCourses(semesterId).first + allSectionTimes
+        ↓  查库取快照：currentSemester + watchCourses(semesterId).first + allSectionTimes
 buildWidgetPayload()  →  JSON
         ↓  MethodChannel "cn.edu.ncpu.timetable/widget" / "updatePayload"
 MainActivity → WidgetPreferences.save → TimetableWidgetProvider.refreshAll
@@ -128,8 +128,9 @@ Android：
 
 进度（2026-09-11，OnePlus PLC110 / Android 16）：
 
-- 已完成：步骤 3（成功添加，选择器中可见「南工课表」）、步骤 4（表头「第 2 周 · 周五」，当天 3 门课全部命中，时间与官方作息一致）。
-- 待完成：步骤 5、6、7、8。
+- 已完成：步骤 3（成功添加，选择器中可见「南工课表」）、步骤 4（表头「第 2 周 · 周五」，当天 3 门课全部命中，时间与官方作息一致）、步骤 6（点击小组件可打开 App）。
+- 待完成：步骤 5（数据变更后即时刷新）、步骤 7（缩放与「还有 N 门课」溢出）、步骤 8（跨天重算）。
+- 注意：正常课量下当天只有 3 门课，启动器最小高度可容 5 行，溢出分支无法自然触发。曾尝试向真机生产库注入临时课，因中文 SQL 编码事故导致 App 加载失败并已回退（见 `knowledge/incident_2026-09-11_db_injection.md`）。**不得再直接修改真机生产数据库**；如确需制造数据，必须使用独立测试库或 ASCII/Python 写库并先备份。
 
 ## 已知局限与风险
 
@@ -137,11 +138,11 @@ Android：
 - 小组件未运行过 App 时只能显示「打开 App 完成课表设置」。
 - 不同启动器对 RemoteViews 的尺寸/字号处理存在差异，实测为准。
 - 学期边界展示与 App 内不同（见上表），属有意设计。
-- 未在真机验证前，小组件渲染结论一律保持 `BLOCKED`。
+- 未在真机验证前，该结论一律保持 `BLOCKED`；已由真机确认的三项（添加、渲染、点击打开 App）不再计入未验证。
 
 ## 验证状态
 
-- `CONFIRMED`：`flutter analyze` 无问题；`flutter test` 103/103；`gradlew :app:testDebugUnitTest` 13/13；Debug APK 构建通过，清单含 receiver 与 appwidget 元数据，未新增权限。
-- `CONFIRMED`（2026-09-11，OnePlus PLC110 / Android 16）：provider 配置在 `dumpsys appwidget` 中正常；主屏可添加「南工课表」；表头与当天课程、时间渲染正确。
-- `BLOCKED`：缩放行为、跨天重算、点击打开 App、数据变更后即时刷新 —— 见 TASK-019 待完成步骤。
+- `CONFIRMED`：`flutter analyze` 无问题；`flutter test` 111/111；`gradlew :app:testDebugUnitTest` 13/13（2026-09-11 `--rerun` 强制重跑）；Debug APK 构建通过，清单含 receiver 与 appwidget 元数据，未新增权限。
+- `CONFIRMED`（2026-09-11，OnePlus PLC110 / Android 16）：provider 配置在 `dumpsys appwidget` 中正常；主屏可添加「南工课表」；表头与当天课程、时间渲染正确；点击可打开 App。
+- `BLOCKED`：数据变更后的即时刷新、缩放、「还有 N 门课」溢出、跨天重算 —— 见 TASK-019 待完成步骤。
 - `Resolved`：ISSUE-013（`<View>` 导致 inflate 失败）已修复并复验，务必遵守上面的「布局硬约束」。

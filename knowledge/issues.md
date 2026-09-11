@@ -8,7 +8,7 @@ Observed: 初期仅有候选入口。2026-09-10 已通过用户真机脱敏采�
 
 Impact: 原阻塞已解除；`NcpuTimetableParser`、`NcpuAdapter.parseTimetable`、预览与替换写入已实现。
 
-Resolution Evidence: 事实见 `knowledge/ncpu_import.md`；2026-09-10 `flutter analyze` 无问题、`flutter test` 77/77。当前仅剩真机端到端体验与持久化结果未验收，单列 TASK-021。
+Resolution Evidence: 事实见 `knowledge/ncpu_import.md`；2026-09-10 `flutter analyze` 无问题、`flutter test` 77/77。真机端到端已由 TASK-021（2026-09-11）验收通过。
 
 ## ISSUE-002 Android/iOS 工具链状态待检查
 
@@ -83,20 +83,19 @@ Resolution:
 
 ## ISSUE-007 WebView / 教务导入端到端验收需用户登录确认
 
-Status: Open（BLOCKED）
+Status: Resolved（2026-09-11，TASK-021）
 
 Observed: 风险门、受限 WebView、同源课表取数、解析、预览与替换写入代码均已完成；真机脱敏采集已确认接口，设备现已连接且生产库内已有教务课程。剩余重新导入必须由用户本人登录并确认预览。
 
 Impact: 无法确认当前版本的 WebView 加载/导航拦截、课表响应进入内存、预览内容、确认写入及重启持久化是否在真机整链路工作；不能声称正式导入已真机验收。
 
-Possible Solution:
-- 首选：用户接入 Android 真机后执行 `flutter run --debug`，导航到设置页 → 教务导入 → 验证 WebView 页面。
-- 备选：授权安装 emulator + system-image 后在模拟器上验证。
-- 复测：`flutter devices` 确认设备 → 设置页 → 教务导入 → 自行登录并打开学生课表查询 → 核对预览 → 确认写入 → 检查手动课程保留 → 重启 App 检查持久化（TASK-021）。
+Resolution: 2026-09-11 用户在 OnePlus PLC110 / Android 16 上本人登录教务完成导入。预览 27 条；`source=ncpu` 的 27 条 id 集合指纹导入前后完全相同（替换等价）；手动课程经 rowid 位移（`1..27` → `29..55`，插入起点 29）反证保留成功；学期记录未变、`integrity_check=ok`。证据见 `knowledge/testing.md` 的 TASK-021 段落。
+
+Remaining: 差异区块在教务数据真实变化时的真机显示（当日数据未变）——由自动测试覆盖，未升级为已确认。
 
 ## ISSUE-008 候选 HTTP 页面被错误显示为已验证官方页面
 
-Status: Resolved in Code（真机交互仍 BLOCKED）
+Status: Resolved（真机交互已由 TASK-021 验证，2026-09-11）
 
 Observed: 原 ImportLoginPage 会立即加载未经真机确认的 HTTP 候选地址，并在加载后显示绿色 verified 图标和“学校官方页面”文案。
 
@@ -116,15 +115,15 @@ Resolution: 在协议确认前移除 Cookie 参数；`NcpuSchoolConfig.accepts` 
 
 ## ISSUE-010 桌面小组件主屏交互待用户添加
 
-Status: Open（BLOCKED）
+Status: Partially Resolved（2026-09-11 真机复验后更新剩余范围）
 
-Observed: TASK-018 的 Dart 桥接、原生小组件代码与资源均已完成；2026-09-10 23:47 真机再次确认 provider 注册、Dart → SharedPreferences 载荷链路、正确学期起点及按教学楼解析的课程时间。尚未由用户添加到主屏。
+Observed: TASK-018 的 Dart 桥接、原生小组件代码与资源均已完成；2026-09-10 23:47 真机再次确认 provider 注册、Dart → SharedPreferences 载荷链路、正确学期起点及按教学楼解析的课程时间。2026-09-11 用户在 OnePlus PLC110 上把小组件添加到主屏。
 
-Impact: 无法确认 RemoteViews 在主屏的实际渲染、添加/缩放行为、跨天重算、点击打开 App、30 分钟周期刷新的真实时延；不能声称桌面小组件功能验证通过。
+Impact: 添加、表头/当天课程渲染、点击打开 App 已确认可用；数据变更后的即时刷新、缩放、「还有 N 门课」溢出、跨天重算及 30 分钟周期刷新的真实时延仍未验证，不能声称桌面小组件整体验收通过。
 
-Possible Solution:
-- 首选：用户接入 Android 真机（USB + 开发者模式 + adb 授权）后执行 `flutter run --debug`，按 `knowledge/home_widget.md` 的 9 步验收流程逐项确认。
-- 备选：授权安装 emulator + system-image 后在模拟器验证（模拟器可改系统日期，便于跨天验证）。
+Resolution Evidence: 添加后 ISSUE-013（inflate 失败）修复并复验，表头「第 2 周 · 周五」与当天 3 门课、时间与官方作息一致；点击经 `START u0 flg=0x14000000 mRealCallingUid=10218` 确认由我们 PendingIntent 启动。详见 `knowledge/tasks.md` 的 TASK-019 与 `knowledge/home_widget.md`。
+
+Next Step: 按 `knowledge/home_widget.md` 步骤 5、7、8 复检。溢出分支正常课量下无法触发，**不得再直接改真机生产库**制造数据。
 
 ## ISSUE-011 小组件 provider 在 dumpsys 中配置全为 0
 
@@ -159,10 +158,12 @@ Prevention: 见 `knowledge/home_widget.md`「布局硬约束」。
 
 ## ISSUE-012 Git 仓库没有基线提交
 
-Status: Open
+Status: Resolved（2026-09-11，TASK-022）
 
 Observed: 2026-09-10 22:33 +08:00，`git log` 报当前 `master` 分支尚无 commit，`git status --short` 显示项目文件全部为 untracked。
 
 Impact: 当前开发成果没有 Git 历史、差异基线或可靠的文件级恢复点；也无法用普通 `git diff` 审核本轮改动。
 
-Possible Solution: 执行 TASK-022；先核对 `.gitignore` 与提交范围，确认不包含构建产物、调试采集报告或任何身份/会话数据，再由用户确认是否创建首个基线提交。
+Resolution: 2026-09-11 建立基线提交 `5509a85` 与文档收尾提交 `938c78c` 并推送到 `origin`（`https://gitee.com/chenxihh/test_c.git`），本地与远端一致；当前 `master` 共 9 个提交。提交前已扫描确认无密钥、无构建产物、无身份字段。
+
+Remaining: 公开提交元数据含个人 Gmail 地址，属身份信息公开（TASK-033 P2-3）；是否改写历史需用户单独决定，未经授权不执行。

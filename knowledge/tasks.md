@@ -11,13 +11,30 @@
 ## Blocked
 
 - [ ] TASK-019 桌面小组件真机验收 —— 进行中（2026-09-11，OnePlus PLC110 / Android 16）。已完成：启动器可选择并添加「南工课表」（ISSUE-011 关闭）、表头与当天课程时间渲染正确（ISSUE-013 修复后复验）、点击小组件可打开 App（`START u0 flg=0x14000000 mRealCallingUid=10218` 即启动器用我们 PendingIntent 的标志位启动）。
-  **剩余**：「还有 N 门课」溢出分支 —— 今天仅 3 门课而启动器最小高度 179dp 可容 5 行，正常使用下**无法触发**该分支；本轮尝试注入 6 条临时课来制造溢出，因编码失误导致 App 加载失败并已回退（见 changelog）。若要继续，须用 ASCII 值或 Python 写库，并先备份。
-  另有跨天重算未验（建议改学期开学周一而非改系统日期）。验收步骤见 `knowledge/home_widget.md`。
+  **剩余**：数据变更后即时刷新、缩放、「还有 N 门课」溢出、「跨天重算」。其中溢出分支 —— 今天仅 3 门课而启动器最小高度 179dp 可容 5 行，正常使用下**无法触发**；本轮尝试注入 6 条临时课来制造溢出，因编码失误导致 App 加载失败并已回退（见 changelog）。**不得再为补验证直接修改真机生产数据库**；如确需，必须使用独立测试库或用 ASCII 值/Python 写库，并先备份。
+  跨天重算未验（建议改学期开学周一而非改系统日期）。缩放无独立真机记录，按未验证处理。验收步骤见 `knowledge/home_widget.md`。
 
 ## Done
 
+- [x] TASK-037 修复导入预览批量修改溢出（2026-09-11 完成）：将差异明细、课程列表和提示合并进最大为视口高度 65% 的单一滚动区，按钮保持在滚动区外；新增 27 条修改、360×800 视口回归测试，验证无异常、可滚到最后一条修改和课程列表底部、确认按钮始终可点。修正 `home_widget.md` 的旧接口名和 Zcode 报告的知识库文件计数。`dart format --set-exit-if-changed` 通过、`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测强制重跑成功。未操作真机、Git 历史或远端。
+
+- [x] TASK-036 独立复核 TASK-035 Zcode 整改（2026-09-11 完成）：核心差异逻辑、`flutter analyze`、`flutter test` 111/111 与 Android 原生单测强制重跑均通过；但构造 27 条 `changed` 的 360×800 widget 场景稳定复现 `RenderFlex overflowed by 698 pixels`，TASK-035 仅部分验收、暂不建议提交。另发现 `home_widget.md` 仍引用已删除的 `firstSemester`，交付报告的知识库文件计数不一致。完整复核见 `knowledge/review_2026-09-11_task035.md`。
+
+- [x] TASK-035 执行 Zcode 修改任务书（2026-09-11 完成）：对应 `knowledge/zcode_fix_request_2026-09-11.md` 全部要求。
+  - `CONFIRMED` 导入差异新增 `changed`：`ImportDiff{added, removed, changed}`，`changed` 为 `CourseChange{previous, current, fields}`，逐字段按内容比较课程名、教师、教室、星期、节次、周次、起止时间、备注；`isEmpty` 同时考虑三类。
+  - `CONFIRMED` 差异双侧只取 `CourseSource.ncpu`：`next` 中混入的手动课程不再被计为新增或修改（修复 P3-1）。
+  - `CONFIRMED` 预览摘要改为「新增 N 条 · 移除 N 条 · 修改 N 条」，仅三类皆空时显示「与上次导入一致」；修改项以「旧值 → 新值」展示，空值显示「（未填）」。
+  - `CONFIRMED` `flutter analyze` 无问题、`flutter test` 111/111、`gradlew :app:testDebugUnitTest --rerun` 13/13。
+  - `CONFIRMED` 同步知识库过期结论（`current_state.md`、`home_widget.md`、`testing.md`、`issues.md`、`ncpu_import.md`、`changelog.md`）；未改 `replaceImportedCourses` 事务与手动课程隔离。
+  - 未做：不改写 Git 历史、不改真机生产数据（等待用户决定公开邮箱）。
+  - 交付报告：`knowledge/zcode_fix_report_2026-09-11.md`（含未改动清单与原因、验收标准对照）。
+
+- [x] TASK-034 生成 Zcode 修改任务书（2026-09-11 完成）：把 TASK-033 的 3 个 P2 与 1 个 P3 转为明确的实现要求、测试矩阵、知识库同步范围、Git 邮箱决策边界和禁止事项；文件为 `knowledge/zcode_fix_request_2026-09-11.md`。本任务只编写任务书，未修改业务源码。
+
+- [x] TASK-033 审查 Zcode 最近改动与 Gitee 仓库状态（2026-09-11 完成）：审查 `938c78c..6b321a4` 的 7 个提交；确认本地/远端 `master` 同为 `6b321a4`，`flutter analyze` 通过、`flutter test` 103/103、Android 原生单测构建成功；未发现已提交凭据或构建产物。发现 3 个 P2（导入摘要漏报详情变化、知识库状态矛盾、公开提交邮箱）和 1 个 P3（diff 的 next 未过滤 manual）。完整报告见 `knowledge/review_2026-09-11_zcode_gitee.md`。
+
 - [x] TASK-021 教务课表导入真机端到端验收（2026-09-11 完成）：用户在 OnePlus PLC110 上本人登录教务并完成导入，全部验收项通过。
-  - `CONFIRMED` 预览：27 条安排，与库内行数一致；新增的「相对上次导入」区块显示「与上次导入一致，没有新增或移除」。
+  - `CONFIRMED` 预览：27 条安排，与库内行数一致；新增的「相对上次导入」区块显示「与上次导入一致，没有新增或移除」（当时文案，TASK-035 起为「没有新增、移除或修改」并带「修改」计数）。
   - `CONFIRMED` 确认写入与替换等价：`source=ncpu` 的 27 条 id 集合指纹导入前后完全相同（`8b02dddd…`），未丢课也未多课。
   - `CONFIRMED` **手动课程保留**（本次最重要的新增证据）：用户先手动加一门课，再执行导入。`courses` 的隐式 rowid 由 `1..27` 变为 `29..55`。推理：导入只删 `source='ncpu'` 的 1..27 行，插入时 SQLite 取 `max(rowid)+1`，起点为 29 说明**插入那一刻 rowid 28（手动课）仍然存在**；若导入误删手动课，表会变空、重新插入将从 1 开始。用户验收后自行删除该手动课，留下 28 号空档。
   - `CONFIRMED` 学期记录未被导入改动（仍为 2026-08-31 / 20 周），SQLite `integrity_check=ok`。
@@ -59,9 +76,9 @@
 
 - [x] TASK-012 实现脱敏 Debug 接口发现工具（2026-09-10 完成）：脱敏器 + 同源 XHR/fetch JS 注入 + 采集页/自动保存 + 单元测试已完成，并通过真机采集确认正方教务核心课表接口、菜单号、`kbList`/节次字段结构；原始课表响应只留内存，脱敏报告不保存密码、Cookie、Session、Token 或身份原文。事实见 `knowledge/ncpu_import.md`。
 
-- [x] TASK-018 实现 Android 桌面小组件（2026-09-10 完成）：Flutter 侧构建整周课表快照 JSON 并经 MethodChannel 推送，Android 侧用 `WidgetScheduleCalculator`（纯 Kotlin，自写 civil-days 日期算法，不依赖 java.time）按设备日期自行判断「今天是第几周、有哪些课」，因此 App 未运行时小组件仍显示正确；RemoteViews 列表按小组件实际高度决定行数，超出显示「还有 N 门课」，点击打开 App，night 配色随系统。`flutter analyze` 无问题，`flutter test` 53/53，`gradlew :app:testDebugUnitTest` 13/13，Debug APK 构建通过且清单/资源静态校验通过，未新增权限。真机渲染验收转 TASK-019，保持 BLOCKED。
+- [x] TASK-018 实现 Android 桌面小组件（2026-09-10 完成）：Flutter 侧构建整周课表快照 JSON 并经 MethodChannel 推送，Android 侧用 `WidgetScheduleCalculator`（纯 Kotlin，自写 civil-days 日期算法，不依赖 java.time）按设备日期自行判断「今天是第几周、有哪些课」，因此 App 未运行时小组件仍显示正确；RemoteViews 列表按小组件实际高度决定行数，超出显示「还有 N 门课」，点击打开 App，night 配色随系统。`flutter analyze` 无问题，`flutter test` 53/53，`gradlew :app:testDebugUnitTest` 13/13，Debug APK 构建通过且清单/资源静态校验通过，未新增权限。真机渲染验收转 TASK-019（当时保持 BLOCKED，后续已完成添加/渲染/点击三项）。
 
-- [x] TASK-017 收口教务登录骨架安全与构建复现性（2026-09-10 完成）：候选 HTTP 地址必须显式确认后才创建 WebView；移除误导性的“已验证官方页面”状态和裸 Cookie 接口；统一 scheme/host 校验；稳定版 Android 插件及 AGP 9 修复固化到项目 `third_party/`。`flutter analyze` 无问题，`flutter test` 44/44，通过恢复全局 Pub Cache 原状后的干净 APK 构建；WebView 真机交互保持 BLOCKED。
+- [x] TASK-017 收口教务登录骨架安全与构建复现性（2026-09-10 完成）：候选 HTTP 地址必须显式确认后才创建 WebView；移除误导性的“已验证官方页面”状态和裸 Cookie 接口；统一 scheme/host 校验；稳定版 Android 插件及 AGP 9 修复固化到项目 `third_party/`。`flutter analyze` 无问题，`flutter test` 44/44，通过恢复全局 Pub Cache 原状后的干净 APK 构建；WebView 真机交互当时保持 BLOCKED（后续 TASK-021 已完成端到端验收）。
 
 - [x] TASK-000 创建 AGENTS.md 与知识库
 - [x] TASK-001 初始化 Flutter 项目与目录结构

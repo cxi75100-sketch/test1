@@ -12,12 +12,12 @@
 - NcpuTimetableParser：真实 `kbList` 关键字段、字段乱序、周次/节次回退、身份字段忽略与异常响应（12 个测试）。
 - NcpuAdapter：loginUrl、scheme/host 联合校验、空数据/异常/合法响应 sealed 结果（11 个测试）。
 - Import entry widget：设置页入口存在 + 导航到 WebView 页（2 个测试）。
-- ImportPreviewDialog widget：无旧数据时不显示比较区块、差异为空时明示「与上次导入一致」、有增删时显示条数并列出被移除课程（3 个测试）。
+- ImportPreviewDialog widget：无旧数据时不显示比较区块、差异为空时明示「与上次导入一致」、同时显示新增/移除/修改三类计数、修改项展示「旧值 → 新值」（含空值占位符）、只有修改时也不显示「一致」；27 条修改在 360×800 视口无布局异常，可滚到最后一条修改及课程列表底部，操作按钮始终可用（6 个测试）。
 - Import login widget：用户确认风险前只渲染候选 HTTP 风险门、不创建 WebView 加载状态（1 个测试）。
 - Widget payload builder：协议版本、学期字段、课程序列化、配色规则（含 colorKey 取绝对值）、节次时间（5 个测试）。
 - Widget sync：原生通道缺失时降级返回 false、启动快照含默认学期与 10 条节次时间、新增/删除课程后重新推送（4 个测试，用 `TestDefaultBinaryMessengerBinding` 打桩通道）。
 - Widget 日程计算（JVM / JUnit）：`gradlew :app:testDebugUnitTest`，EpochDay/ISO 星期、开学前、第 1 周、第 2 周周三、第 20 周周日、学期结束后、总周数非法、周次与星期过滤排序、时间来源优先级（13 个测试）。
-- ImportDiff：首次导入全为新增、内容相同无差异、单侧增删、手动课程不参与、同 id 改名不算差异（6 个测试）。
+- ImportDiff：首次导入全为新增、内容相同（含不同对象/不同数组实例）无差异、单侧增删、手动课程双侧都不参与、同 id 详情变化（名称/教师/教室/备注、星期/节次/周次/起止时间）进入 `changed` 并保留新旧课程、未变化不进入任何列表（12 个测试）。
 - ImportSessionCleaner：平台实现未注册时静默降级、不抛异常（1 个测试）。
 - Timetable page：学期已结束/开学日在未来时显示提示条，学期日期在范围内时不显示（3 个测试，按运行日期推算学期避免时间依赖）。
 - Android toolchain：`flutter doctor -v` 全绿 + Debug APK 静态校验（签名 + 清单 + ABI + 权限）。
@@ -25,7 +25,10 @@
 ## Passed
 
 - `flutter analyze`（在 `R:\` 下）：No issues found。
-- `flutter test`（2026-09-11 +08:00）：103 tests passed。
+- `flutter test`（2026-09-11 20:22 +08:00，TASK-037）：112 tests passed；包含批量修改弹窗滚动回归。
+- `flutter test`（2026-09-11 20:04 +08:00，TASK-035）：111 tests passed。
+- `gradlew :app:testDebugUnitTest --rerun`（2026-09-11 20:05，TASK-035）：13 tests / 0 failures / 0 errors / 0 skipped（Kotlin 未改动，本轮强制重跑确认）。
+- `flutter test`（2026-09-11 19:5x +08:00，TASK-033）：103 tests passed。
 - `flutter test`（2026-09-11 +08:00）：100 tests passed。
 - `flutter test`（2026-09-11 00:03 +08:00）：84 tests passed。
 - `flutter test`（2026-09-10 23:47 +08:00）：83 tests passed。
@@ -66,7 +69,7 @@
   - `CONFIRMED`：`am start` 启动成功，进程存活（`pidof` 有值），logcat 无 `AndroidRuntime` / FATAL / `MissingPluginException`。
   - `CONFIRMED`：**Dart → 原生小组件数据链路在真机工作**：`run-as ... cat shared_prefs/ncpu_timetable_widget.xml` 读到完整载荷（`schemaVersion=1`、`firstWeekMonday=2026-09-07`、`totalWeeks=20`、10 条节次时间、`courses` 为空）。
   - `CONFIRMED`：`dumpsys appwidget` 中已登记 `cn.edu.ncpu.timetable.ncpu_timetable.widget.TimetableWidgetProvider`。
-  - `BLOCKED`：小组件在主屏的实际渲染、添加/缩放、跨天重算、点击打开 App——尚未完成，另见 ISSUE-011（provider 信息在 dumpsys 中显示为全 0，待添加小组件后复检）。
+  - 当时的 `BLOCKED` 快照（已被后续真机记录取代，仅作历史）：小组件在主屏的实际渲染、添加/缩放、跨天重算、点击打开 App 当时尚未完成，见 ISSUE-011。
   - 环境注意：本轮 USB 连接多次掉线，掉线后偶发需要重新授权；单条命令内尽量一次完成多个查询。
 - Android 真机（2026-09-10 23:35 +08:00，同一 vivo V1981A）：
   - `CONFIRMED`：新版 Debug APK 经 `adb push` + `pm install -r -t` 覆盖安装成功；包版本 1.0.0 (1)，`lastUpdateTime=2026-09-10 23:28:52`。
@@ -104,13 +107,13 @@
   - 注意：`app_webview/` 在 WebView 首次初始化时会自行由 4318 KB 降到 234 KB，与本次改动无关；观测清缓存要看 `cache/WebView/Default/HTTP Cache`，不是 `app_webview/`。
   - 未覆盖：导入预览「新增/移除」差异行的真机显示（需真实导入，见 TASK-021）。
 - Android 模拟器：未安装，如需可用需追加 `sdkmanager "emulator" "system-images;android-36;google_apis;x86_64"`。
-- WebView / 教务导入：`PARTIAL`。用户曾在真机通过 Debug 采集工具登录并打开课表页，已取得脱敏接口形状；当前源码又加入正式解析、预览和确认写入，但尚未对这一完整版本做真机端到端验收（TASK-021）。
-- 桌面小组件：`BLOCKED`。原生渲染、添加到主屏、缩放、跨天重算、点击打开 App 均无设备可验证；验收步骤见 `knowledge/home_widget.md`。
+- WebView / 教务导入：`CONFIRMED`。用户已在真机通过 Debug 采集工具登录并取得脱敏接口形状；2026-09-11 又在真机完成「登录 → 预览 27 条 → 确认写入 → 重启持久化」的完整端到端验收（TASK-021），替换等价且手动课程经 rowid 位移反证保留。
+- 桌面小组件：`PARTIAL`。真机已确认启动器添加、表头与当天课程渲染、点击打开 App（ISSUE-013 修复后复验）；尚未验证数据变更后的即时刷新、缩放、「还有 N 门课」溢出与跨天重算（TASK-019 剩余项）。
 - iOS：未开始，首版仅保持代码兼容。
 
 ## Not Covered
 
-- 导入预览「移除」分支的真机显示：当日教务数据未变，只观察到「无变化」；「有增删」的排版由 widget 测试覆盖。
+- 导入预览差异区块在真实教务数据变化时的真机显示：当日教务数据未变，只观察到「无变化」；新增/移除/修改三类排版与「旧值 → 新值」明细由 widget 测试覆盖。
 - 通知权限、时区、系统重启后的调度。
 - 自动测试已覆盖重新导入的替换持久化与手动课程保留；真机侧已在 TASK-021 验证。
 - Release 签名（当前 Debug 用 Android Debug 证书；release 走 debug signingConfig，`android/app/build.gradle.kts` 已注明 TODO）。
@@ -125,6 +128,7 @@
   - `integrity_check=ok` **不能证明数据可被 App 正确读取** —— 编码问题 SQLite 不报错，必须打开 App 界面确认。
   - 改库前先 `cp` 一份备份文件；出问题直接写回备份即可恢复（本轮即如此恢复，且未丢失课程）。
   - 写入前必须 `am force-stop` **并确认 `pidof` 为空**：进程还活着时它持有 SQLite 页缓存，会继续读到旧数据（本轮也踩到）。
+  - **不得为补验证（如小组件溢出分支）直接修改真机生产数据库**；要制造数据就用独立测试库，或至少只用 ASCII 值并先备份（见 `knowledge/incident_2026-09-11_db_injection.md`）。
 - Flutter 3.47.2 在中文工作区直接 `flutter analyze` 会触发 LSP JSON 截断异常。
 - 使用临时 ASCII 盘符 `R:`（`subst R: "D:\桌面\课程表"`）后分析和测试均通过。
 - 建立 `R:` 时，Git Bash 直接把中文路径传给 `cmd //c subst` 会因 UTF-8/GBK 编码不一致失败；改用 `powershell -EncodedCommand <Base64 UTF-16LE>` 稳定成功。

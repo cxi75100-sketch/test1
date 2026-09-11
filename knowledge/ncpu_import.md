@@ -77,14 +77,14 @@
 - 导航警告横幅 + 加载进度条 + 返回/刷新按钮
 - 同源 XHR/fetch 钩子识别 `xskbcx_cxXsgrkb`：原始响应只经 `timetableData` 桥进入内存；Debug 脱敏报告经 `importCapture` 桥进入采集页并自动保存
 - “尝试导入课表”读取当前学期，解析后展示 `ImportPreviewDialog`；用户确认才调用 `replaceImportedCourses`，保留 `manual` 课程
-- `BLOCKED`：当前版本的完整登录、预览、确认写入与重启持久化尚未完成真机端到端验收（TASK-021）
+- `CONFIRMED`（2026-09-11，TASK-021）：完整登录、预览、确认写入与重启持久化已在真机端到端验收通过；差异区块对教务来源课程显示新增/移除/修改三类，手动课程双侧都不参与。
 
 ## Validation Status
 
 - `CONFIRMED`：真实系统、登录入口、核心课表端点、`gnmkdm=N253508`、学年学期参数及 `kbList` 关键字段来自用户真机脱敏采集。
 - `CONFIRMED`：`NcpuTimetableParser` 与 `NcpuAdapter` 单元测试覆盖合法响应、字段乱序、同课多安排、周次/节次回退、身份字段忽略和异常响应。
-- `CONFIRMED`：2026-09-10 全量 `flutter test` 77/77 通过，`flutter analyze` 无问题。
-- `BLOCKED`：当前版本尚未在真机完成“登录 → 打开学生课表查询 → 预览 → 确认写入 → 重启验证”的完整验收。
+- `CONFIRMED`：2026-09-11 全量 `flutter test` 111/111 通过，`flutter analyze` 无问题。
+- `CONFIRMED`（2026-09-11）：真机完成“登录 → 打开学生课表查询 → 预览 → 确认写入 → 重启验证”的完整验收（TASK-021）；预览 27 条，替换等价，手动课程经 rowid 位移反证保留。
 
 ## Parser Notes
 

@@ -1,5 +1,62 @@
 # Changelog
 
+## 2026-09-11 - Agent（TASK-037 修复批量修改弹窗溢出）
+
+- `ImportPreviewDialog` 改为有界单滚动区：最大高度为当前视口的 65%，差异明细、课程列表与底部提示统一滚动，确认/取消按钮固定在外部。
+- 先新增 27 条修改、360×800 视口回归测试并复现失败，再实现修复；测试确认无布局异常、能滚到最后一条修改和列表底部、确认按钮始终可点。
+- 修正 `home_widget.md` 中已删除的 `firstSemester` 为 `currentSemester`；修正 Zcode 交付报告“8 文件同步”为实际 9 个既有知识库文件。
+- 验证：格式检查通过、`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测强制重跑 BUILD SUCCESSFUL。未操作真机、Git 历史或远端。
+
+## 2026-09-11 - Agent（TASK-036 独立复核 TASK-035）
+
+- 独立重跑通过：`flutter analyze`、`flutter test` 111/111、Android 原生单测强制重跑。
+- 临时审查测试模拟 27 条课程同时修改；360×800 视口稳定出现 `RenderFlex overflowed by 698 pixels`，证明交付报告所称“理论上可能超高”是可复现 UI 缺陷。取证后已删除临时测试文件。
+- TASK-035 判定为部分通过，暂不建议提交；需为差异明细增加有界滚动并补批量修改回归测试。
+- 文档小问题：`home_widget.md` 仍引用旧接口 `firstSemester`；交付报告的知识库同步文件计数不一致。完整复核：`knowledge/review_2026-09-11_task035.md`。
+
+## 2026-09-11 - Agent（TASK-035 执行 Zcode 修改任务书：导入差异 changed / manual 过滤 / 知识库同步）
+
+Fixed:
+- **导入差异漏报课程详情变化（TASK-033 P2-1）**：`ImportDiff` 只按 `Course.id` 判断，同 id 下课程名、教师、教室、周次等变化时预览仍显示「与上次导入一致」，而确认导入后数据库确实写入了新值。现在新增 `changed` 语义，并对同 id 课程逐字段按内容比较。
+- **`diffImportedCourses` 只过滤 `previous` 侧手动课程（TASK-033 P3-1）**：`next` 中混入 `manual` 会被误计为新增，与函数注释和「手动课程不参与差异」的约定不一致。现在两侧都只取 `CourseSource.ncpu`。
+
+Added:
+- `ImportDiff.changed`（`List<CourseChange>`）；`CourseChange{previous, current, fields}` 同时保留旧课程与新课程；`CourseFieldChange{label, oldValue, newValue}` 描述单个字段的「旧值 → 新值」。`ImportDiff.isEmpty` 现在同时考虑 `added`、`removed`、`changed`。
+- 逐字段比较覆盖：课程名、教师、教室、星期、节次（startSection/endSection）、周次、起止时间、备注；`weeks` 按列表内容逐项比较，不依赖对象或数组同一性。
+- `test/import_diff_test.dart` 新增/重写 12 个用例（含 `next` 混入手动课程、内容相同但对象不同、同 id 单字段变化）。
+- `test/import_preview_dialog_test.dart` 扩到 5 个用例（三类计数、修改项「旧值 → 新值」、空值占位符、只有修改时也不显示「一致」）。
+
+Changed:
+- 预览摘要改为「新增 N 条 · 移除 N 条 · 修改 N 条」；只有三类均为空时显示「与上次导入一致，没有新增、移除或修改。」；修改项按课程列出变化字段，空教师/空教室显示「（未填）」。
+- `weekdayLabels` 从 `ImportPreviewDialog` 的私有常量提为 `import_diff.dart` 的公开常量，供课程行与差异明细共用。
+- 未改动 `replaceImportedCourses` 的事务与来源隔离逻辑，未改 `import_login_page.dart`。
+
+Docs:
+- 同步知识库过期结论：`current_state.md`（里程碑、Current Blockers、Recommended Next Action、Handoff）、`tasks.md`、`home_widget.md`、`testing.md`、`issues.md`（ISSUE-007/008/010/012）、`ncpu_import.md`。小组件「渲染/添加/点击」不再标 BLOCKED；「即时刷新/缩放/溢出/跨天」保持未验证。
+- `current_state.md` 与 `ncpu_import.md` 的 Git 提交数由 4 更正为当前 9。
+- 保留历史测试快照，但为 TASK-021 的旧摘要文案加注「当时快照」。
+
+Validation:
+- `CONFIRMED` `flutter analyze`（`R:\`）：No issues found。
+- `CONFIRMED` `flutter test`：111/111 passed（上轮 103，本轮 +8）。
+- `CONFIRMED` `gradlew :app:testDebugUnitTest --rerun`：13 tests / 0 failures / 0 errors / 0 skipped。
+- 未连接设备，未做新的真机验证；未直接修改真机生产数据库。
+- 安全边界：未提交、未推送、未重写 Git 历史；公开提交邮箱问题仅报告，等待用户给出目标邮箱。
+- 交付报告：`knowledge/zcode_fix_report_2026-09-11.md`，包含逐文件改动理由、差异模型说明、测试矩阵、**未改动清单及原因**、未验证项与验收标准对照。
+
+## 2026-09-11 - Agent（TASK-034 Zcode 修改任务书）
+
+- 将 TASK-033 审查问题整理成可执行任务书：导入差异增加 `changed`、双侧过滤手动课程、同步知识库状态、明确公开邮箱需用户决策。
+- 写明测试矩阵、验收标准及安全边界：不改真机生产数据库、不泄露教务身份/会话数据、不重写 Git 历史、不覆盖已有未提交审查文件。
+- 文件：`knowledge/zcode_fix_request_2026-09-11.md`；本轮未修改业务源码。
+
+## 2026-09-11 - Agent（TASK-033 Zcode / Gitee 仓库审查）
+
+- 审查基线收尾后的 7 个提交（`938c78c..6b321a4`），确认本地、跟踪分支与 Gitee 远端 `master` 均指向 `6b321a4`。
+- 验证：`flutter analyze` 通过，`flutter test` 103/103，Android 原生单测构建成功；启发式扫描未发现已提交的密码、Token、Cookie、私钥、数据库或 APK。
+- 报告发现：导入差异摘要漏报同 id 的课程详情变化；知识库多处状态互相矛盾；公开提交元数据暴露个人 Gmail；`diffImportedCourses` 的 `next` 未过滤手动课程。
+- 未修改业务源码。完整报告：`knowledge/review_2026-09-11_zcode_gitee.md`。
+
 ## 2026-09-11 - Agent（小组件溢出验证失败并回退，记录编码陷阱）
 
 Incident（Agent 操作失误，非代码缺陷）：
@@ -31,7 +88,7 @@ Validation:
 - `CONFIRMED` Debug APK 构建并安装成功；修复后 `mViewMode == VIEW_MODE_ERROR` 计数归零。
 - `CONFIRMED` 主屏语义树实测：表头「第 2 周 · 周五」与设备日期 2026-09-11 一致；当天 3 门课全部命中；时间 `10:25-11:55` / `14:00-15:30` / `15:55-17:25` 与官方作息一致。
 - `CONFIRMED` 小组件可通过启动器的添加小组件流程找到并放置（TASK-019 步骤 3、4 完成）。
-- `BLOCKED` 缩放行为、跨天重算、点击打开 App、数据变更后即时刷新仍未验证（TASK-019 步骤 5-8）。
+- `BLOCKED`（当时快照）缩放行为、跨天重算、点击打开 App、数据变更后即时刷新仍未验证（TASK-019 步骤 5-8）；其中点击打开 App 已在后续真机复验确认。
 
 ## 2026-09-11 - Agent（TASK-021 教务导入真机端到端验收通过）
 
