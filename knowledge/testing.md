@@ -171,3 +171,6 @@
 - Git Bash 调 `adb shell` 带绝对设备路径（`/sdcard/w.xml`、`/data/data/<pkg>/...`）时必须加 `MSYS_NO_PATHCONV=1`，否则会被改写成 `C:/Program Files/Git/...` 而静默失败（`run-as ls` 与 `uiautomator dump` 后 `cat` 均踩到）。
 - `avdmanager --sdk_root=` 必须放在动作之后（`create avd ... --sdk_root=...`），放最前报 `not a valid global flag`；更稳的是设 `ANDROID_SDK_ROOT` / `ANDROID_HOME` 环境变量（用正斜杠路径）。
 - 模拟器占用：`emulator` 1034 MB + `system-images` 4374 MB（约 5.4 GB），AVD 默认落在 `C:\Users\<user>\.android\avd\`。启动前建议 `gradlew --stop` 释放闲置 daemon（实测可用内存 3.1 GB → 5.5 GB）。
+- **`flutter analyze` 突然报依赖符号 undefined 时先跑 `flutter pub get`，不要当成代码回归**（2026-09-12 踩到）：`.dart_tool/package_config.json` 停留在新增依赖之前（时间戳早于 pubspec 改动，条目数 120 而 pubspec.lock 更多），导致 `flutter_local_notifications` / `timezone` 的 import 报 `Target of URI doesn't exist`，并连带产生 17 个 `undefined_class` / `undefined_method` 错误，全部集中在未改动的 `notification_scheduler.dart`。执行 `flutter pub get` 后 `.dart_tool/package_config.json` 重建，`flutter analyze` 立即恢复 `No issues found`，`pubspec.lock` 无变化。
+  - 判据：错误全部落在同一个未改动文件、且首个错误是 `uri_does_not_exist` 时，优先怀疑依赖未解析。
+  - 本轮 Pub Cache 缺少 `flutter_local_notifications` 与 `timezone`，`pub get` 需要联网从 pub.dev 下载；离线环境下该错误无法自愈。

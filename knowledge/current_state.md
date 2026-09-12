@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-12 12:37 +08:00
+2026-09-12 12:50 +08:00
 
 ## Project Boundary
 
@@ -63,10 +63,12 @@
 - 当前学期开学第一周周一为 `2026-08-31`（用户确认，且与教学周历一致）；`2026-09-10` 起属于第 2 周。该值已固化为代码默认常量，两台真机的生产库和小组件载荷均已同步为该日期。
 - 两台真机：vivo V1981A（Android 12 / API 31，2026-09-10 完成覆盖安装与冷启动验收）与 OnePlus PLC110（Android 16 / API 36 / arm64-v8a，2026-09-11 完成全新安装）。
 - Android 模拟器：AVD `ncpu_api36`（pixel_7 / API 36 / google_apis / x86_64 / 2 GB RAM），`emulator` 37.1.11.0，硬件加速走 WHPX（`emulator -accel-check` 退出码 0），启动器为 Launcher3（支持小组件）。用途是替代真机做**可造数据、可改时钟、可重启**的验证；**不替代**厂商启动器下的 RemoteViews 排版、厂商省电策略下的后台/通知行为与 arm64 原生库路径。
-- `CONFIRMED`：Git 基线已建立并推送，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库）；TASK-014 功能提交 `0342855` 已推送，本地、tracking 与 Gitee 远端读回一致。后续提交使用用户指定的仓库级专用邮箱，未改写前 9 个提交的历史。
+- `CONFIRMED`：Git 基线已建立并推送，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库）；TASK-014 功能提交 `0342855` 已推送。TASK-040~044 的改动此前一直只存在于工作区且未提交，2026-09-12 12:47 已补交为 `704c35b`（feat）与 `a029a21`（docs）并推送，本地、tracking 与 Gitee 远端读回一致。后续提交使用用户指定的仓库级专用邮箱，未改写前 9 个提交的历史。
+- 提交前用 `git status` 与 `git rev-list --left-right --count HEAD...origin/master` 确认工作区与远端状态：本轮曾出现「知识库记为已完成验收、但改动从未提交」的情况，验收结论与提交状态必须分开核对。
 
 ## Validation Snapshot
 
+- `CONFIRMED`（2026-09-12 12:47 +08:00）：TASK-040~044 的改动已从工作区固化为两个提交并推送 —— `704c35b`（feat：今日/整周双栏目与横向周视图）与 `a029a21`（docs：模拟器环境与改版验收）；本地 `HEAD`、`origin/master` 与 Gitee `refs/heads/master` 均为 `a029a21`。推送前在 `R:\` 独立重跑 `flutter analyze` 无问题、`flutter test` 132/132，`pubspec.lock` 无变化；提交前扫描确认差异无凭据或构建产物。附带发现：工作区中已按 TASK-041~044 验收的改动此前从未提交，`.dart_tool/package_config.json` 也停留在新增通知依赖之前（详见 `knowledge/testing.md` Tooling Note）。
 - `CONFIRMED`（2026-09-12 12:37 +08:00，TASK-044）：整周日列已移除半区内部 `ListView`，上午两格和下午/晚间三格按节次定位；满课 Widget 回归确认五张课程卡均渲染、两半等高且半区内无 `Scrollable`。新增入口从右下悬浮按钮移至顶部，避免遮挡末节课程。`flutter analyze` 无问题，`flutter test` 132/132，Debug APK 构建并在 `ncpu_api36` 覆盖安装、启动成功；真实 Android 画面确认周四五张满课卡一次全部可见、周五单门上午课落在对应节次格，logcat 无致命异常或布局溢出。未修改课程数据。
 - `CONFIRMED`（2026-09-12 12:22 +08:00，TASK-043）：整周课表已重做为“一天一列、上下各半”的横向周视图；七天横向滑动、上午/下午晚间等高、晚课保留、课程详情与完整元数据均有 Widget 回归。`flutter analyze` 无问题，`flutter test` 132/132；Debug APK 构建成功，在 `ncpu_api36` 覆盖安装与冷启动成功（2474 ms）。真实 Android 画面检查首屏约两列半、横滑后连续显示后续日期，列间无重叠，浮动按钮未遮挡课程；logcat 无致命异常或布局溢出。临时 Computer Use 截图已清理，未修改课程数据。
 - `CONFIRMED`（2026-09-12 11:45 +08:00，TASK-042）：整周课表已按官方节次增加“上午 / 下午 / 晚上”时段标题、图标、节次范围、分隔线与留白；跨时段课程按开始节次唯一归类。`flutter analyze` 无问题，`flutter test` 132/132；Debug APK 构建成功，在 `ncpu_api36` 覆盖安装及冷启动成功（2793 ms），语义树确认上午/下午时段层级已渲染，logcat 无 App 致命异常。临时 UI dump 已删除；未修改课程数据。
