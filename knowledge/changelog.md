@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-09-12 - Agent（修复发行版标题与说明的中文乱码）
+
+Fixed:
+- Gitee 发行版 `1140075` 的标题与说明中，中文被逐字节替换为 U+FFFD、页面显示成一串 `?`。原因为把非 ASCII 文本直接放在命令行里传给 Windows 原生 `curl`，argv 编码转换破坏了字节。
+- 改用 Python 读取 UTF-8 文件、以 `PATCH /releases/{id}` 重写 `name` 与 `body`（该接口必须同时带 `tag_name`）。
+
+Validation:
+- `CONFIRMED` 修复后读回：标题 3 个汉字、说明 122 个汉字、U+FFFD 均为 0，并与本地期望文本逐字一致；四个附件（两个 APK + 自动生成的源码包）完好。
+- `CONFIRMED` 线上提交 `645b890` 的提交信息 86 个汉字、0 个 U+FFFD，说明 `git push` 路径未受影响；仅 API 写路径受影响。
+- 踩坑与正确做法已记入 `knowledge/release.md`。教训：验证写操作要按「中文字符数 > 0 且 U+FFFD == 0」逐字比对，不能只数 `?`（`?` 可能只是控制台渲染）。
+
 ## 2026-09-12 - Agent（清理公开文档中的项目归属表述并重建发行版）
 
 Changed:

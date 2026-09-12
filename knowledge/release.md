@@ -126,6 +126,28 @@ flutter build apk --release --target-platform android-arm,android-arm64
 
 4. 读回校验：`GET /releases/{release_id}` 确认附件存在，再下载一次比对 SHA-256。
 
+### ⚠️ Windows 下传中文给 API 的编码陷阱（2026-09-12 踩到）
+
+**不要把非 ASCII 文本直接写在命令行里传给 `curl`。** 首次发布时标题与说明里的中文被逐字节替换成 U+FFFD（替换字符），Gitee 页面上显示成一串 `?`；而 ASCII 部分（Tag、SHA-256）完好。原因是 Git Bash 把命令行参数交给 Windows 原生 `curl.exe` 时的编码转换破坏了字节。
+
+正确做法是让文本**不经过命令行**：
+
+- 用 Write 之类的方式落成 UTF-8 文件，再用 `--data-urlencode "body@文件路径"`；或
+- 直接用 Python 读 UTF-8 文件发请求（本次采用）：
+
+```python
+payload = urllib.parse.urlencode(
+    {'access_token': TOKEN, 'tag_name': 'v1.0.1', 'name': title, 'body': body}
+).encode('utf-8')
+req = urllib.request.Request(API + '/releases/' + RID, data=payload, method='PATCH')
+```
+
+修复已有发行版用 `PATCH /releases/{id}`，**必须同时带 `tag_name`**（否则报 `tag_name is missing`），`name` / `body` 会整体替换。
+
+**验证写操作时不要只看问号**：`?` 可能只是控制台的渲染结果，真正的损坏是 **U+FFFD**。判据应为「中文字符数 > 0 且 U+FFFD 数 == 0」，并与本地期望字符串**逐字比较**。本轮曾因只数 `?` 而误判为"显示问题"，实际数据已损坏。
+
+（本地 `git commit` / `git tag` 的中文不受影响：抽查线上提交 `645b890` 正文 86 个汉字、0 个 U+FFFD，完好。）
+
 `CONFIRMED` 接口事实：`GET /releases` 与 `GET /releases/{id}` 公开可读；`POST /releases`、`POST /releases/{id}/attach_files` 不带令牌返回 `HTTP 401` + `{"message":"登录失效，无权限访问该资源","code":40001}`，必须携带 `access_token`。令牌权限勾 `projects` 即可。
 
 安全：令牌只在本机命令行内使用，未写入任何文件（已扫描确认仓库内无令牌痕迹）。**发布完成后应立即到 Gitee 撤销该令牌**，尤其是曾把令牌贴进聊天记录的场合。
