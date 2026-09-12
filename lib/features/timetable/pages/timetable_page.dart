@@ -2,19 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/course_colors.dart';
 import '../../../models/course.dart';
 import '../../../models/semester.dart';
+import '../../../services/course_time_service.dart';
 import '../../../services/semester_service.dart';
 import '../providers/timetable_providers.dart';
 import '../widgets/course_card.dart';
 
-class TimetablePage extends ConsumerWidget {
+enum _ScheduleView { today, week }
+
+class TimetablePage extends ConsumerStatefulWidget {
   const TimetablePage({super.key});
 
   static const weekdays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TimetablePage> createState() => _TimetablePageState();
+}
+
+class _TimetablePageState extends ConsumerState<TimetablePage> {
+  _ScheduleView _view = _ScheduleView.today;
+
+  @override
+  Widget build(BuildContext context) {
     final semester = ref.watch(activeSemesterProvider);
     final week = ref.watch(selectedWeekProvider);
     final courses = ref.watch(visibleCoursesProvider);
@@ -37,6 +48,12 @@ class TimetablePage extends ConsumerWidget {
         ),
         actions: [
           IconButton.filledTonal(
+            tooltip: '新增课程',
+            onPressed: () => context.push('/course/new'),
+            icon: const Icon(Icons.add_rounded),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
             tooltip: '设置',
             onPressed: () => context.push('/settings'),
             icon: const Icon(Icons.tune_rounded),
@@ -45,20 +62,28 @@ class TimetablePage extends ConsumerWidget {
         ],
       ),
       body: courses.when(
-        data: (items) =>
-            _ScheduleBody(semester: semester, week: week, courses: items),
+        data: (items) => _ScheduleBody(
+          semester: semester,
+          week: week,
+          courses: items,
+          view: _view,
+          onViewChanged: _changeView,
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => _ErrorState(
           message: '$error',
           onRetry: () => ref.invalidate(visibleCoursesProvider),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/course/new'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('新增课程'),
-      ),
     );
+  }
+
+  void _changeView(_ScheduleView value) {
+    if (_view == value) return;
+    if (value == _ScheduleView.today) {
+      ref.read(selectedWeekProvider.notifier).goToCurrent();
+    }
+    setState(() => _view = value);
   }
 }
 
@@ -67,11 +92,15 @@ class _ScheduleBody extends ConsumerWidget {
     required this.semester,
     required this.week,
     required this.courses,
+    required this.view,
+    required this.onViewChanged,
   });
 
   final Semester? semester;
   final int week;
   final List<Course> courses;
+  final _ScheduleView view;
+  final ValueChanged<_ScheduleView> onViewChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -83,35 +112,287 @@ class _ScheduleBody extends ConsumerWidget {
     final termStatus = activeSemester == null
         ? TermStatus.within
         : const SemesterService().termStatus(activeSemester, DateTime.now());
-    final counts = List.generate(
-      7,
-      (index) => courses.where((course) => course.weekday == index + 1).length,
-    );
     return Column(
       children: [
-        _WeekHero(
-          week: week,
-          totalWeeks: totalWeeks,
-          courseCount: courses.length,
-          onPrevious: week > 1
-              ? ref.read(selectedWeekProvider.notifier).previous
-              : null,
-          onNext: week < totalWeeks
-              ? () => ref.read(selectedWeekProvider.notifier).next(totalWeeks)
-              : null,
-          onCurrent: ref.read(selectedWeekProvider.notifier).goToCurrent,
-        ),
+        _ScheduleViewSwitcher(value: view, onChanged: onViewChanged),
         if (termStatus != TermStatus.within && activeSemester != null)
           _TermHintBanner(semester: activeSemester, status: termStatus),
-        _WeekStrip(semester: semester, week: week, counts: counts),
-        Expanded(
-          child: courses.isEmpty
-              ? const _EmptyState()
-              : _AgendaList(semester: semester, week: week, courses: courses),
-        ),
+        if (view == _ScheduleView.today)
+          Expanded(
+            child: _TodaySchedule(
+              week: week,
+              courses: courses,
+              termStatus: termStatus,
+            ),
+          )
+        else ...[
+          _WeekHero(
+            week: week,
+            totalWeeks: totalWeeks,
+            courseCount: courses.length,
+            onPrevious: week > 1
+                ? ref.read(selectedWeekProvider.notifier).previous
+                : null,
+            onNext: week < totalWeeks
+                ? () => ref.read(selectedWeekProvider.notifier).next(totalWeeks)
+                : null,
+            onCurrent: ref.read(selectedWeekProvider.notifier).goToCurrent,
+          ),
+          Expanded(
+            child: courses.isEmpty
+                ? const _EmptyState(
+                    title: '本周暂无课程',
+                    message: '可以手动新增，或到设置里从教务系统导入',
+                  )
+                : _WeekBoard(semester: semester, week: week, courses: courses),
+          ),
+        ],
       ],
     );
   }
+}
+
+class _ScheduleViewSwitcher extends StatelessWidget {
+  const _ScheduleViewSwitcher({required this.value, required this.onChanged});
+
+  final _ScheduleView value;
+  final ValueChanged<_ScheduleView> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    key: const ValueKey('schedule-view-switcher'),
+    margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+    padding: const EdgeInsets.all(4),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: const Color(0xFFE7E9F1)),
+    ),
+    child: Row(
+      children: [
+        Expanded(
+          child: _ScheduleViewButton(
+            key: const ValueKey('today-view-button'),
+            label: '今日',
+            icon: Icons.today_rounded,
+            selected: value == _ScheduleView.today,
+            onTap: () => onChanged(_ScheduleView.today),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: _ScheduleViewButton(
+            key: const ValueKey('week-view-button'),
+            label: '整周',
+            icon: Icons.calendar_view_week_rounded,
+            selected: value == _ScheduleView.week,
+            onTap: () => onChanged(_ScheduleView.week),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _ScheduleViewButton extends StatelessWidget {
+  const _ScheduleViewButton({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+    super.key,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: Material(
+        color: selected ? scheme.primaryContainer : Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 19,
+                  color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TodaySchedule extends StatelessWidget {
+  const _TodaySchedule({
+    required this.week,
+    required this.courses,
+    required this.termStatus,
+  });
+
+  final int week;
+  final List<Course> courses;
+  final TermStatus termStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final todayCourses = termStatus == TermStatus.within
+        ? (courses.where((course) => course.weekday == now.weekday).toList()
+            ..sort((a, b) => a.startSection.compareTo(b.startSection)))
+        : <Course>[];
+    return ListView(
+      key: const ValueKey('today-schedule'),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+      children: [
+        _TodayHero(date: now, week: week, courseCount: todayCourses.length),
+        const SizedBox(height: 22),
+        Row(
+          children: [
+            const Text(
+              '今日课程',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const Spacer(),
+            Text(
+              '${todayCourses.length} 门',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        if (todayCourses.isEmpty)
+          const _EmptyState(
+            title: '今天没有课程',
+            message: '今天的时间属于你，也可以切换到「整周」查看其他安排',
+            compact: true,
+          )
+        else
+          ...todayCourses.map(
+            (course) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: CourseCard(
+                course: course,
+                onTap: () => context.push('/course/${course.id}'),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _TodayHero extends StatelessWidget {
+  const _TodayHero({
+    required this.date,
+    required this.week,
+    required this.courseCount,
+  });
+
+  final DateTime date;
+  final int week;
+  final int courseCount;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.fromLTRB(20, 20, 18, 20),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [Color(0xFF334FB8), Color(0xFF7167E8)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x29334FB8),
+          blurRadius: 24,
+          offset: Offset(0, 10),
+        ),
+      ],
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 66,
+          height: 72,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${date.month}月',
+                style: const TextStyle(color: Color(0xFFDCE2FF), fontSize: 12),
+              ),
+              Text(
+                '${date.day}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 29,
+                  height: 1.05,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '今天 · ${TimetablePage.weekdays[date.weekday - 1]}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                '第 $week 周 · $courseCount 门课程',
+                style: const TextStyle(color: Color(0xFFDCE2FF), fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+        const Icon(Icons.auto_awesome_rounded, color: Color(0xFFDCE2FF)),
+      ],
+    ),
+  );
 }
 
 class _WeekHero extends StatelessWidget {
@@ -229,69 +510,6 @@ class _HeroIconButton extends StatelessWidget {
   );
 }
 
-class _WeekStrip extends StatelessWidget {
-  const _WeekStrip({
-    required this.semester,
-    required this.week,
-    required this.counts,
-  });
-
-  final Semester? semester;
-  final int week;
-  final List<int> counts;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 68,
-    child: ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      scrollDirection: Axis.horizontal,
-      itemCount: 7,
-      separatorBuilder: (_, _) => const SizedBox(width: 8),
-      itemBuilder: (context, index) {
-        final date = _dateFor(semester, week, index + 1);
-        final active = counts[index] > 0;
-        return Container(
-          width: 54,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: active
-                ? Theme.of(context).colorScheme.primaryContainer
-                : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: active
-                  ? Theme.of(context).colorScheme.primary
-                        .withValues(alpha: 0.25)
-                  : const Color(0xFFE7E9F1),
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                TimetablePage.weekdays[index].replaceFirst('周', ''),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: active ? FontWeight.w800 : FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                date == null ? '—' : '${date.month}/${date.day}',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    ),
-  );
-}
-
 /// 学期日期与今天对不上时的提示条。
 ///
 /// 没有这个提示时，学期设置过期的设备只会看到周次一直停在第 N 周，
@@ -347,8 +565,8 @@ class _TermHintBanner extends StatelessWidget {
   }
 }
 
-class _AgendaList extends StatelessWidget {
-  const _AgendaList({
+class _WeekBoard extends StatelessWidget {
+  const _WeekBoard({
     required this.semester,
     required this.week,
     required this.courses,
@@ -359,32 +577,75 @@ class _AgendaList extends StatelessWidget {
   final List<Course> courses;
 
   @override
-  Widget build(BuildContext context) {
-    final activeDays = List.generate(
-      7,
-      (index) => index + 1,
-    ).where((day) => courses.any((course) => course.weekday == day)).toList();
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 100),
-      itemCount: activeDays.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 22),
-      itemBuilder: (context, index) {
-        final weekday = activeDays[index];
-        final dayCourses =
-            courses.where((course) => course.weekday == weekday).toList()
-              ..sort((a, b) => a.startSection.compareTo(b.startSection));
-        return _DaySection(
-          weekday: weekday,
-          date: _dateFor(semester, week, weekday),
-          courses: dayCourses,
-        );
-      },
-    );
-  }
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final columnWidth = ((constraints.maxWidth - 42) / 2.25)
+          .clamp(142.0, 168.0)
+          .toDouble();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 9),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.swipe_left_alt_rounded,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  '横向滑动查看一周 · 每天上下各半',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              key: const ValueKey('week-board-scroll'),
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 88, 16),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: List.generate(7, (index) {
+                  final weekday = index + 1;
+                  final dayCourses =
+                      courses
+                          .where((course) => course.weekday == weekday)
+                          .toList()
+                        ..sort(
+                          (a, b) => a.startSection.compareTo(b.startSection),
+                        );
+                  return Padding(
+                    padding: EdgeInsets.only(right: index == 6 ? 0 : 10),
+                    child: SizedBox(
+                      width: columnWidth,
+                      child: _WeekDayColumn(
+                        weekday: weekday,
+                        date: _dateFor(semester, week, weekday),
+                        courses: dayCourses,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }
 
-class _DaySection extends StatelessWidget {
-  const _DaySection({
+class _WeekDayColumn extends StatelessWidget {
+  const _WeekDayColumn({
     required this.weekday,
     required this.date,
     required this.courses,
@@ -395,59 +656,445 @@ class _DaySection extends StatelessWidget {
   final List<Course> courses;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Row(
-          children: [
-            Text(
-              TimetablePage.weekdays[weekday - 1],
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final isToday =
+        date != null &&
+        date!.year == now.year &&
+        date!.month == now.month &&
+        date!.day == now.day;
+    final morning = courses
+        .where((course) => course.startSection <= 4)
+        .toList();
+    final later = courses.where((course) => course.startSection >= 5).toList();
+    return Container(
+      key: ValueKey('week-day-column-$weekday'),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isToday
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.45)
+              : const Color(0xFFE4E7F0),
+          width: isToday ? 1.5 : 1,
+        ),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0F1E2A55),
+            blurRadius: 14,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _DayColumnHeader(
+            weekday: weekday,
+            date: date,
+            courseCount: courses.length,
+            isToday: isToday,
+          ),
+          Expanded(
+            child: _DayHalf(
+              key: ValueKey('day-$weekday-morning'),
+              title: '上午',
+              sectionLabel: '1–4 节',
+              icon: Icons.wb_sunny_outlined,
+              accent: const Color(0xFF3F6FC7),
+              courses: morning,
+              sectionBreaks: const [2, 4],
             ),
-            const SizedBox(width: 8),
-            if (date != null)
-              Text(
-                '${date!.month}月${date!.day}日',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          const Divider(),
+          Expanded(
+            child: _DayHalf(
+              key: ValueKey('day-$weekday-later'),
+              title: '下午 / 晚间',
+              sectionLabel: '5–10 节',
+              icon: Icons.wb_twilight_outlined,
+              accent: const Color(0xFFC97817),
+              courses: later,
+              sectionBreaks: const [6, 8, 10],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayColumnHeader extends StatelessWidget {
+  const _DayColumnHeader({
+    required this.weekday,
+    required this.date,
+    required this.courseCount,
+    required this.isToday,
+  });
+
+  final int weekday;
+  final DateTime? date;
+  final int courseCount;
+  final bool isToday;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      color: isToday ? scheme.primaryContainer : const Color(0xFFF7F8FC),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  TimetablePage.weekdays[weekday - 1],
+                  style: TextStyle(
+                    color: isToday ? scheme.primary : scheme.onSurface,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  date == null ? '日期未设置' : '${date!.month}月${date!.day}日',
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+            decoration: BoxDecoration(
+              color: isToday
+                  ? scheme.primary.withValues(alpha: 0.1)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(99),
+            ),
+            child: Text(
+              '$courseCount',
+              style: TextStyle(
+                color: isToday ? scheme.primary : scheme.onSurfaceVariant,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DayHalf extends StatelessWidget {
+  const _DayHalf({
+    required this.title,
+    required this.sectionLabel,
+    required this.icon,
+    required this.accent,
+    required this.courses,
+    required this.sectionBreaks,
+    super.key,
+  });
+
+  final String title;
+  final String sectionLabel;
+  final IconData icon;
+  final Color accent;
+  final List<Course> courses;
+  final List<int> sectionBreaks;
+
+  @override
+  Widget build(BuildContext context) {
+    final coursesBySlot = [
+      for (var slotIndex = 0; slotIndex < sectionBreaks.length; slotIndex++)
+        courses.where((course) {
+          final previousBreak = slotIndex == 0
+              ? 0
+              : sectionBreaks[slotIndex - 1];
+          return course.startSection > previousBreak &&
+              course.startSection <= sectionBreaks[slotIndex];
+        }).toList(),
+    ];
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(9, 9, 9, 7),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: accent),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            const Spacer(),
-            Text(
-              '${courses.length} 门',
-              style: TextStyle(
-                fontSize: 12,
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w700,
+              Text(
+                sectionLabel,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 9,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 7),
+          Expanded(
+            child: courses.isEmpty
+                ? Center(
+                    child: Text(
+                      '无课',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.outline,
+                        fontSize: 11,
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: [
+                      for (
+                        var slotIndex = 0;
+                        slotIndex < coursesBySlot.length;
+                        slotIndex++
+                      )
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              bottom: slotIndex == coursesBySlot.length - 1
+                                  ? 0
+                                  : 5,
+                            ),
+                            child: Column(
+                              children: [
+                                for (final course in coursesBySlot[slotIndex])
+                                  Expanded(
+                                    child: _GridCourseCard(course: course),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GridCourseCard extends StatelessWidget {
+  const _GridCourseCard({required this.course});
+
+  final Course course;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = courseColorFor(course.colorKey);
+    final time = const CourseTimeService().resolve(course);
+    final sectionLabel = course.startSection == course.endSection
+        ? '${course.startSection}节'
+        : '${course.startSection}-${course.endSection}节';
+    final scheme = Theme.of(context).colorScheme;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dense = constraints.maxHeight < 70;
+        return Material(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            onTap: () => context.push('/course/${course.id}'),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: EdgeInsets.all(dense ? 4 : 7),
+              child: Row(
+                children: [
+                  Container(
+                    width: 3,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: constraints.maxHeight < 36
+                        ? FittedBox(
+                            alignment: Alignment.centerLeft,
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  course.name,
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    height: 1,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    Text(sectionLabel),
+                                    if (time != null) ...[
+                                      const Text(' · '),
+                                      Text(time.label),
+                                    ],
+                                  ],
+                                ),
+                                if (course.classroom.isNotEmpty ||
+                                    course.teacher.isNotEmpty)
+                                  Row(
+                                    children: [
+                                      if (course.classroom.isNotEmpty)
+                                        Text(course.classroom),
+                                      if (course.classroom.isNotEmpty &&
+                                          course.teacher.isNotEmpty)
+                                        const Text(' · '),
+                                      if (course.teacher.isNotEmpty)
+                                        Text(course.teacher),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          )
+                        : Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                course.name,
+                                maxLines: dense ? 1 : 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: dense ? 10.5 : 11.5,
+                                  height: 1.05,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SizedBox(height: dense ? 1 : 3),
+                              Row(
+                                children: [
+                                  Text(
+                                    sectionLabel,
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: dense ? 8 : 8.5,
+                                      height: 1,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  if (time != null) ...[
+                                    Text(
+                                      ' · ',
+                                      style: TextStyle(
+                                        color: scheme.onSurfaceVariant,
+                                        fontSize: dense ? 8 : 8.5,
+                                        height: 1,
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        time.label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: scheme.onSurfaceVariant,
+                                          fontSize: dense ? 8 : 8.5,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (course.classroom.isNotEmpty ||
+                                  course.teacher.isNotEmpty) ...[
+                                SizedBox(height: dense ? 1 : 2),
+                                Row(
+                                  children: [
+                                    if (course.classroom.isNotEmpty)
+                                      Flexible(
+                                        child: Text(
+                                          course.classroom,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: scheme.onSurfaceVariant,
+                                            fontSize: dense ? 8 : 8.5,
+                                            height: 1,
+                                          ),
+                                        ),
+                                      ),
+                                    if (course.classroom.isNotEmpty &&
+                                        course.teacher.isNotEmpty)
+                                      Text(
+                                        ' · ',
+                                        style: TextStyle(
+                                          color: scheme.onSurfaceVariant,
+                                          fontSize: dense ? 8 : 8.5,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    if (course.teacher.isNotEmpty)
+                                      Flexible(
+                                        child: Text(
+                                          course.teacher,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            color: scheme.onSurfaceVariant,
+                                            fontSize: dense ? 8 : 8.5,
+                                            height: 1,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 10),
-      ...courses.map(
-        (course) => Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: CourseCard(
-            course: course,
-            onTap: () => context.push('/course/${course.id}'),
           ),
-        ),
-      ),
-    ],
-  );
+        );
+      },
+    );
+  }
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  const _EmptyState({
+    required this.title,
+    required this.message,
+    this.compact = false,
+  });
+
+  final String title;
+  final String message;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(32, 8, 32, 72),
+      padding: EdgeInsets.fromLTRB(32, compact ? 24 : 8, 32, compact ? 24 : 72),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -465,13 +1112,13 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          const Text(
-            '本周暂无课程',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 7),
           Text(
-            '可以手动新增，或到设置里从教务系统导入',
+            message,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,

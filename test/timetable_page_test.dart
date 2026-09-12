@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ncpu_timetable/app.dart';
 import 'package:ncpu_timetable/core/database/app_database.dart';
 import 'package:ncpu_timetable/features/timetable/providers/timetable_providers.dart';
+import 'package:ncpu_timetable/models/course.dart';
 import 'package:ncpu_timetable/models/semester.dart';
 
 /// 本周一。用它推学期日期，测试就不依赖运行日期。
@@ -89,6 +90,168 @@ void main() {
     final database = await _pumpAppWithSemester(tester, _thisMonday());
 
     expect(find.textContaining('点此更新学期设置'), findsNothing);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('今日与整周栏目相互独立且今日只显示当天课程', (tester) async {
+    final database = await _pumpAppWithSemester(tester, _thisMonday());
+    final today = DateTime.now().weekday;
+    final anotherDay = today == 7 ? 1 : today + 1;
+    await database.upsertCourse(
+      Course(
+        id: 'today-course',
+        name: '当天课程',
+        weekday: today,
+        startSection: 1,
+        endSection: 2,
+        weeks: const [1],
+        semesterId: 'the-semester',
+        colorKey: 1,
+      ),
+    );
+    await database.upsertCourse(
+      Course(
+        id: 'another-course',
+        name: '其他日期课程',
+        weekday: anotherDay,
+        startSection: 3,
+        endSection: 4,
+        weeks: const [1],
+        semesterId: 'the-semester',
+        colorKey: 2,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('today-schedule')), findsOneWidget);
+    expect(find.text('今日课程'), findsOneWidget);
+    expect(find.text('当天课程'), findsOneWidget);
+    expect(find.text('其他日期课程'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('week-view-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('today-schedule')), findsNothing);
+    expect(find.text('当天课程'), findsOneWidget);
+    expect(find.text('其他日期课程'), findsOneWidget);
+    expect(find.textContaining('本周 2 条安排'), findsOneWidget);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('整周满课一天一列且半区内无需上下滚动', (tester) async {
+    final database = await _pumpAppWithSemester(tester, _thisMonday());
+    for (final course in [
+      const Course(
+        id: 'morning-course',
+        name: '上午课程',
+        weekday: 1,
+        startSection: 1,
+        endSection: 2,
+        weeks: [1],
+        semesterId: 'the-semester',
+        colorKey: 1,
+      ),
+      const Course(
+        id: 'afternoon-course',
+        name: '下午课程',
+        weekday: 1,
+        startSection: 5,
+        endSection: 6,
+        weeks: [1],
+        semesterId: 'the-semester',
+        colorKey: 2,
+      ),
+      const Course(
+        id: 'morning-course-2',
+        name: '上午课程二',
+        weekday: 1,
+        startSection: 3,
+        endSection: 4,
+        weeks: [1],
+        semesterId: 'the-semester',
+        colorKey: 4,
+      ),
+      const Course(
+        id: 'afternoon-course-2',
+        name: '下午课程二',
+        weekday: 1,
+        startSection: 7,
+        endSection: 8,
+        weeks: [1],
+        semesterId: 'the-semester',
+        colorKey: 5,
+      ),
+      const Course(
+        id: 'evening-course',
+        name: '晚上课程',
+        weekday: 1,
+        startSection: 9,
+        endSection: 10,
+        weeks: [1],
+        semesterId: 'the-semester',
+        colorKey: 3,
+      ),
+    ]) {
+      await database.upsertCourse(course);
+    }
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('week-view-button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('week-board-scroll')), findsOneWidget);
+    expect(find.byKey(const ValueKey('week-day-column-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('week-day-column-7')), findsOneWidget);
+    final morningHalf = find.byKey(const ValueKey('day-1-morning'));
+    final laterHalf = find.byKey(const ValueKey('day-1-later'));
+    expect(morningHalf, findsOneWidget);
+    expect(laterHalf, findsOneWidget);
+    expect(
+      tester.getSize(morningHalf).height,
+      closeTo(tester.getSize(laterHalf).height, 1),
+    );
+    expect(
+      find.descendant(of: morningHalf, matching: find.text('上午课程')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: morningHalf, matching: find.text('上午课程二')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: laterHalf, matching: find.text('下午课程')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: laterHalf, matching: find.text('下午课程二')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: laterHalf, matching: find.text('晚上课程')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: morningHalf, matching: find.byType(Scrollable)),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: laterHalf, matching: find.byType(Scrollable)),
+      findsNothing,
+    );
+
+    final sundayBefore = tester
+        .getTopLeft(find.byKey(const ValueKey('week-day-column-7')))
+        .dx;
+    await tester.drag(
+      find.byKey(const ValueKey('week-board-scroll')),
+      const Offset(-700, 0),
+    );
+    await tester.pumpAndSettle();
+    final sundayAfter = tester
+        .getTopLeft(find.byKey(const ValueKey('week-day-column-7')))
+        .dx;
+    expect(sundayAfter, lessThan(sundayBefore));
 
     await _disposeApp(tester, database);
   });

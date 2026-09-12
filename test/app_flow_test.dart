@@ -22,14 +22,16 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('本周暂无课程'), findsOneWidget);
-    await tester.tap(find.text('新增课程'));
+    expect(find.text('今天没有课程'), findsOneWidget);
+    await tester.tap(find.byTooltip('新增课程'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.widgetWithText(TextFormField, '课程名 *'), '线性代数');
     await tester.tap(find.text('保存课程'));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey('week-view-button')));
+    await tester.pumpAndSettle();
     expect(find.text('线性代数'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump(const Duration(milliseconds: 1));
@@ -72,6 +74,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const ValueKey('week-view-button')));
+    await tester.pumpAndSettle();
     expect(find.text('周日'), findsOneWidget);
     expect(find.text('创新实践'), findsOneWidget);
     expect(find.text('工程训练中心'), findsOneWidget);

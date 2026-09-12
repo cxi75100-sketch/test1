@@ -79,7 +79,7 @@ widget/
 
 ## Data Flow
 
-页面 → Riverpod provider/controller → repository → Drift database → SQLite。
+页面 → Riverpod provider/controller → repository → Drift database → SQLite。课表首页在页面内维护“今日 / 整周”展示状态，两栏共享 `visibleCoursesProvider`：今日按设备星期过滤当前教学周并按节次排序；整周按星期生成七个横向列，每列把 `startSection <= 4` 放入等高的上午半区，其余课程（含 9-10 节）放入“下午 / 晚间”半区。半区内继续按节次断点 `[2, 4]` 与 `[6, 8, 10]` 生成固定等高格，课程按开始节次落格，使用普通 `Column + Expanded` 一次渲染而不嵌套纵向滚动；仅改变展示分组，不复制或修改课程。切回今日时通过既有 `SelectedWeek.goToCurrent()` 回到当前教学周，不新增数据接口。
 
 教务导入：风险确认 → 受限 WebView 自行登录 → 打开学生课表查询 → 同源脚本把课表响应送入内存 → `SchoolAdapter.parseTimetable` → `diffImportedCourses` 与上次导入比对 → 预览（含新增/移除）→ 用户确认 → `replaceImportedCourses` → 离开页面时 `ImportSessionCleaner` 清 HTTP 缓存并清空内存响应。适配器不接收 Cookie 或其他凭证；原始响应不落盘，学校原始字段不得进入 UI。
 
