@@ -1,7 +1,7 @@
 name: ncpu_timetable
 description: 南昌工学院本地课表 App。
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: ^3.13.2
