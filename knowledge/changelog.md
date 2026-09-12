@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-13 - Agent（TASK-052 镜像到 GitHub）
+
+Added:
+- 仓库新增 GitHub 远端 `https://github.com/cxi75100-sketch/test1`（远端名 `github`），`master` 与 tag `v1.0.0` / `v1.0.1` 已推送，默认分支由 `main` 改为 `master`。
+- GitHub 发行版 `v1.0.1`（id `387624284`，预发布）已创建，附件与说明文本与 Gitee 一致。
+- `origin` 配置为**双 push 地址**（Gitee + GitHub），`git push origin master --tags` 一次同步两边；另新增仓库级、仅对 github.com 生效的代理配置（Clash `127.0.0.1:7897`），Gitee 仍直连。
+
+Validation:
+- `CONFIRMED` GitHub `master` = 本地 `HEAD`（同为 `8f3ef39`）；`git push origin master` 实测两边均报 `Everything up-to-date`，双推生效。
+- `CONFIRMED` 从 GitHub 下载通用包 40,476,186 B（4.8 s），SHA-256 `0b674d3b…f242694` 与本地构建产物一致；发行版说明读回逐字匹配（283 个汉字、0 个 U+FFFD）。
+- `CONFIRMED` 网络事实：GitHub 直连超时，走 Clash 代理后 0.79 s 响应；本机无 `gh` CLI，GitHub SSH key 未注册（`Permission denied (publickey)`），认证走 HTTPS + PAT。
+
+Note:
+- GitHub 原有的 `main`（16 字节 README 占位）与 `copilot/test-branch` 未动，后者有未关闭 PR；与 `master` 的差异已记入 `knowledge/release.md`。
+- PAT 存入 Windows 凭据管理器，未写入仓库文件；令牌出现在对话中，用毕需用户撤销。
+- 踩坑与配置细节（含 GitHub API 的 Bearer 认证、`uploads.github.com` 附件上传）记入 `knowledge/release.md`。
+
 ## 2026-09-12 - Agent（发行版说明改写为面向测试者）
 
 Changed:

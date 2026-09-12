@@ -159,3 +159,59 @@ req = urllib.request.Request(API + '/releases/' + RID, data=payload, method='PAT
 - **绝不入库**：仓库是公开的。keystore 放在 `D:\Tools\android-keys\`，`key.properties` 已被 gitignore。
 - **不要删除 `D:\Tools\android-keys\`**，也不要把 keystore 移入项目目录。
 - Play Store 上传需要 AAB（`flutter build appbundle`）与 v3 签名，本轮不做。
+
+## 镜像到 GitHub
+
+`CONFIRMED`（2026-09-12/13）：本仓库同时发布到 GitHub `https://github.com/cxi75100-sketch/test1`，两侧内容一致。
+
+### 远端与推送方式
+
+`origin` 保留 Gitee 作为 fetch 地址，并**同时配置了两个 push 地址**（Gitee + GitHub）：
+
+```bash
+git remote set-url --add --push origin https://gitee.com/chenxihh/test_c.git
+git remote set-url --add --push origin https://github.com/cxi75100-sketch/test1.git
+```
+
+因此 **`git push origin master`（含 `--tags`）会一次推送两边**。另有一个独立远端 `github` 指向同一 GitHub 仓库，供单独 fetch / 对比使用。
+
+### GitHub 必须走代理，Gitee 不需要
+
+本机 GitHub 直连会超时（实测 `Failed to connect to github.com port 443 ... Timed out`，直连首页也要 12 s 以上），而 Gitee 直连正常。已在**仓库级**配置只对 GitHub 生效的代理（Clash Verge 的混合端口）：
+
+```bash
+git config --local http.https://github.com.proxy http://127.0.0.1:7897
+```
+
+要点：
+
+- 这是**主机限定**配置，Gitee 流量仍直连，不受影响。
+- 走代理后 GitHub 响应 0.79 s、下载 40 MB 约 4.8 s，远快于直连。
+- **Clash 未开启时 GitHub 推送会失败，Gitee 仍可正常推送**。遇到 GitHub 推送超时先确认代理在跑。
+- `gh` CLI 未安装；本机也没有可用的 GitHub SSH key（`git@github.com` 报 `Permission denied (publickey)`），认证走 HTTPS + PAT。
+
+### GitHub 侧现状
+
+- 默认分支已由 PATCH `/repos/{owner}/{repo}` 设为 **`master`**（原本是 `main`）。
+- 仓库原有的 `main`（仅 16 字节 README 占位提交 `31e94be5`）与 `copilot/test-branch` **未改动**，且存在一个未关闭的 PR —— 因此没有覆盖或删除这两个分支。它们仍与 `master` 内容不一致，属已知差异。
+- tag `v1.0.0` / `v1.0.1` 已推送。
+- 发行版 `v1.0.1`（id `387624284`，预发布）已创建，附件与 Gitee 相同：`ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B），说明文本与 Gitee 一致。
+
+### GitHub API 要点
+
+- 认证用 `Authorization: Bearer <PAT>`（不是查询参数）。
+- 修改默认分支：`PATCH /repos/{owner}/{repo}`，body `{"default_branch":"master"}`。
+- 创建发行版：`POST /repos/{owner}/{repo}/releases`，`tag_name` / `name` / `body` / `prerelease`。
+- 上传附件走**另一个域名**：`POST https://uploads.github.com/repos/{owner}/{repo}/releases/{id}/assets?name=<文件名>`，`Content-Type: application/octet-stream`，body 为文件字节。
+- 中文说明同样必须用 UTF-8 文件 + Python 发送（见上文编码陷阱），不要写进命令行。
+
+### 验证
+
+`CONFIRMED`：GitHub `master` = 本地 `HEAD`；从 GitHub 下载通用包得到 40,476,186 B，SHA-256 `0b674d3b…f242694` 与本地构建产物**一致**；发行版说明读回逐字匹配（283 个汉字、0 个 U+FFFD）。
+
+安全：PAT 由用户在对话中提供，通过 `git credential approve` 存入 Windows 凭据管理器，**未写入仓库任何文件**。令牌出现在聊天记录中，用毕应撤销；撤销后需新令牌才能再推 GitHub。
+
+### 已知差异
+
+- GitHub 上的 `main` 与 `copilot/test-branch` 仍是旧内容，且 `copilot/test-branch` 有未关闭 PR。若要清理需用户确认（涉及删除分支 / 关闭 PR），本轮未动。
+- 两个远端的一致性靠推送时同步；只推一侧会产生分叉。当前 `origin` 已配置双 push 地址，正常无需分别推送。

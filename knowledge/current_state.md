@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-12 23:20 +08:00
+2026-09-13 00:10 +08:00
 
 ## Project Boundary
 
@@ -64,11 +64,13 @@
 - 当前学期开学第一周周一为 `2026-08-31`（用户确认，且与教学周历一致）；`2026-09-10` 起属于第 2 周。该值已固化为代码默认常量，两台真机的生产库和小组件载荷均已同步为该日期。
 - 两台真机：vivo V1981A（Android 12 / API 31，2026-09-10 完成覆盖安装与冷启动验收）与 OnePlus PLC110（Android 16 / API 36 / arm64-v8a，2026-09-11 完成全新安装）。
 - Android 模拟器：AVD `ncpu_api36`（pixel_7 / API 36 / google_apis / x86_64 / 2 GB RAM），`emulator` 37.1.11.0，硬件加速走 WHPX（`emulator -accel-check` 退出码 0），启动器为 Launcher3（支持小组件）。用途是替代真机做**可造数据、可改时钟、可重启**的验证；**不替代**厂商启动器下的 RemoteViews 排版、厂商省电策略下的后台/通知行为与 arm64 原生库路径。
-- `CONFIRMED`：Git 基线已建立并推送，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库）；TASK-014 功能提交 `0342855` 已推送。TASK-040~044 的改动此前一直只存在于工作区且未提交，2026-09-12 12:47 已补交为 `704c35b`（feat）与 `a029a21`（docs）并推送，本地、tracking 与 Gitee 远端读回一致。后续提交使用用户指定的仓库级专用邮箱，未改写前 9 个提交的历史。
+- `CONFIRMED`：Git 基线与双远端。`origin` = `https://gitee.com/chenxihh/test_c.git`（公开），fetch 走 Gitee，**push 配了 Gitee + GitHub 两个地址**；另有一个远端 `github` = `https://github.com/cxi75100-sketch/test1`（公开，默认分支 `master`）。`git push origin master --tags` 一次同步两边。**GitHub 直连会超时，已配置仓库级 `http.https://github.com.proxy` 指向 Clash `127.0.0.1:7897`（仅对 github.com 生效，Gitee 仍直连）——Clash 未开时 GitHub 推送失败、Gitee 不受影响。** 两个仓储的发行版 `v1.0.1` 均含同一组 APK，下载内容哈希一致。详见 `knowledge/release.md`。
+- 早期提交记录：TASK-014 功能提交 `0342855` 已推送；TASK-040~044 的改动曾长期只存在于工作区，2026-09-12 12:47 补交为 `704c35b`（feat）与 `a029a21`（docs）。提交使用用户指定的仓库级专用邮箱，未改写历史。
 - 提交前用 `git status` 与 `git rev-list --left-right --count HEAD...origin/master` 确认工作区与远端状态：本轮曾出现「知识库记为已完成验收、但改动从未提交」的情况，验收结论与提交状态必须分开核对。
 
 ## Validation Snapshot
 
+- `CONFIRMED`（2026-09-13 00:10 +08:00，TASK-052）：仓库已镜像到 GitHub。`master` 与 tag `v1.0.0`/`v1.0.1` 推送成功，GitHub 默认分支改为 `master`；GitHub 发行版 `v1.0.1`（id `387624284`，预发布）附件与说明文本与 Gitee 一致。`git push origin master` 实测两边均 `Everything up-to-date`（`origin` 已配双 push 地址）。从 GitHub 下载通用包 40,476,186 B / 4.8 s，SHA-256 `0b674d3b…f242694` 与本地构建产物一致；说明读回 283 个汉字、0 个 U+FFFD。网络：GitHub 直连超时（12 s+ / 连接超时），仓库级仅对 github.com 配置 Clash 代理 `127.0.0.1:7897` 后 0.79 s。GitHub 原有 `main` 占位与 `copilot/test-branch`（有未关闭 PR）未动。
 - `CONFIRMED`（2026-09-12 23:01 +08:00，TASK-051）：公开文档中的项目归属表述已清理（README + 6 个知识库文档），工作区 0 命中。因该表述已随基线提交推送、且发行版源码压缩包是 tag 快照，已删除旧发行版 `1140059` 并把 tag `v1.0.1` 重建到清理后的提交 `cbc0f20`、重建发行版 `1140075` 重传两个 APK，下载地址不变。重建后源码包（686,693 B / 500 文件）搜索 0 命中；通用包重新下载 SHA-256 `0b674d3b…f242694` 与本地产物一致。**提交历史仍保留旧文本**，彻底清除需重写历史（未执行）。该保密要求已记入本地记忆，不落仓库。
 - `CONFIRMED`（2026-09-12 22:53 +08:00，TASK-050）：v1.0.1 测试版已发布到 Gitee 发行版（初版 release `1140059`，后由 TASK-051 重建为 `1140075`，tag `v1.0.1`，预发布）。附件为通用包 `ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B）。公开接口读回确认附件可见；实际下载通用包比对 SHA-256 与本地产物完全一致。发布用的令牌未写入任何文件，用户在对话中提供，**需自行撤销**。
 - `CONFIRMED`（2026-09-12 22:36 +08:00，TASK-049）：release 包无法联网已修复。根因是 `main/AndroidManifest.xml` 从未声明 `INTERNET`（Flutter 模板只写在 debug/profile 清单，release 不合并），属发布阻断缺陷，影响全部 release 产物含 tag `v1.0.0`。补齐权限后版本升 `1.0.1+2` 重新出包：三个分 ABI APK 经 `aapt2 dump permissions` 确认均含 `INTERNET`，证书仍为正式证书；模拟器覆盖安装 4001→4002 后 `INTERNET: granted=true`，冷启动 1008 ms；端到端进入「设置 → 教务导入 → 继续」后**教务登录页完整渲染**，logcat 无 `ERR_*`；`flutter analyze` 无问题、`flutter test` 132/132。`v1.0.0` 产物作废不得分发。同轮定位 ISSUE-016（学期开学日随时区漂移一天），只记录未修。
