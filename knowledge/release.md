@@ -193,7 +193,10 @@ git config --local http.https://github.com.proxy http://127.0.0.1:7897
 ### GitHub 侧现状
 
 - 默认分支已由 PATCH `/repos/{owner}/{repo}` 设为 **`master`**（原本是 `main`）。
-- 仓库原有的 `main`（仅 16 字节 README 占位提交 `31e94be5`）与 `copilot/test-branch` **未改动**，且存在一个未关闭的 PR —— 因此没有覆盖或删除这两个分支。它们仍与 `master` 内容不一致，属已知差异。
+- 仓库原有内容已按用户要求清理，**现在只剩 `master` 一个分支**：关闭了 PR #1（"Update README"，`copilot/test-branch` → `main`），删除分支 `copilot/test-branch` 与 `main`。删除前的内容仅为 16 字节 README 占位与一次 README 小改（`+2/−1`），无实质资产。
+- 被删除分支的 HEAD 提交号（如需找回）：
+  - `main` = `31e94be5749b04eb2d693fdb48bb70416ae620a0`（"Initial commit"，README.md 16 B）
+  - `copilot/test-branch` = `099f69ce5819efb7a30f89ed6dad4a9c26a08d5e`（README.md 28 B）
 - tag `v1.0.0` / `v1.0.1` 已推送。
 - 发行版 `v1.0.1`（id `387624284`，预发布）已创建，附件与 Gitee 相同：`ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B），说明文本与 Gitee 一致。
 
@@ -213,5 +216,5 @@ git config --local http.https://github.com.proxy http://127.0.0.1:7897
 
 ### 已知差异
 
-- GitHub 上的 `main` 与 `copilot/test-branch` 仍是旧内容，且 `copilot/test-branch` 有未关闭 PR。若要清理需用户确认（涉及删除分支 / 关闭 PR），本轮未动。
 - 两个远端的一致性靠推送时同步；只推一侧会产生分叉。当前 `origin` 已配置双 push 地址，正常无需分别推送。
+- GitHub 侧已无遗留分支（`main` 与 `copilot/test-branch` 已于 2026-09-13 删除，PR #1 已关闭），两个仓库的分支与 tag 集合一致。

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-09-13 - Agent（清理 GitHub 仓库遗留内容）
+
+Changed:
+- 按用户要求让 GitHub 仓库只保留本项目内容：关闭 PR #1（"Update README"，`copilot/test-branch` → `main`），删除分支 `copilot/test-branch` 与 `main`。
+- 结果：GitHub 侧只剩 `master` 一个分支，默认分支为 `master`，未关闭 PR 为 0；与 Gitee 的分支/tag 集合一致。
+
+Validation:
+- `CONFIRMED` 删除前已确认待删内容无实质资产：`main` 仅 16 字节 README 占位（提交 `31e94be5`），`copilot/test-branch` 相对 `main` 只改 README（`+2/−1`，提交 `099f69ce`）。两个提交号已记入 `knowledge/release.md`，便于日后找回。
+- `CONFIRMED` 清理后接口读回：分支列表 = `['master']`，默认分支 `master`，未关闭 PR 数 0。
+
 ## 2026-09-13 - Agent（TASK-052 镜像到 GitHub）
 
 Added:

@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-13 00:10 +08:00
+2026-09-13 00:22 +08:00
 
 ## Project Boundary
 
@@ -70,7 +70,7 @@
 
 ## Validation Snapshot
 
-- `CONFIRMED`（2026-09-13 00:10 +08:00，TASK-052）：仓库已镜像到 GitHub。`master` 与 tag `v1.0.0`/`v1.0.1` 推送成功，GitHub 默认分支改为 `master`；GitHub 发行版 `v1.0.1`（id `387624284`，预发布）附件与说明文本与 Gitee 一致。`git push origin master` 实测两边均 `Everything up-to-date`（`origin` 已配双 push 地址）。从 GitHub 下载通用包 40,476,186 B / 4.8 s，SHA-256 `0b674d3b…f242694` 与本地构建产物一致；说明读回 283 个汉字、0 个 U+FFFD。网络：GitHub 直连超时（12 s+ / 连接超时），仓库级仅对 github.com 配置 Clash 代理 `127.0.0.1:7897` 后 0.79 s。GitHub 原有 `main` 占位与 `copilot/test-branch`（有未关闭 PR）未动。
+- `CONFIRMED`（2026-09-13 00:10 +08:00，TASK-052）：仓库已镜像到 GitHub。`master` 与 tag `v1.0.0`/`v1.0.1` 推送成功，GitHub 默认分支改为 `master`；GitHub 发行版 `v1.0.1`（id `387624284`，预发布）附件与说明文本与 Gitee 一致。`git push origin master` 实测两边均 `Everything up-to-date`（`origin` 已配双 push 地址）。从 GitHub 下载通用包 40,476,186 B / 4.8 s，SHA-256 `0b674d3b…f242694` 与本地构建产物一致；说明读回 283 个汉字、0 个 U+FFFD。网络：GitHub 直连超时（12 s+ / 连接超时），仓库级仅对 github.com 配置 Clash 代理 `127.0.0.1:7897` 后 0.79 s。GitHub 原有 `main` 占位与 `copilot/test-branch`（含未关闭 PR）已于随后按用户要求清理（TASK-053），现只剩 `master`。
 - `CONFIRMED`（2026-09-12 23:01 +08:00，TASK-051）：公开文档中的项目归属表述已清理（README + 6 个知识库文档），工作区 0 命中。因该表述已随基线提交推送、且发行版源码压缩包是 tag 快照，已删除旧发行版 `1140059` 并把 tag `v1.0.1` 重建到清理后的提交 `cbc0f20`、重建发行版 `1140075` 重传两个 APK，下载地址不变。重建后源码包（686,693 B / 500 文件）搜索 0 命中；通用包重新下载 SHA-256 `0b674d3b…f242694` 与本地产物一致。**提交历史仍保留旧文本**，彻底清除需重写历史（未执行）。该保密要求已记入本地记忆，不落仓库。
 - `CONFIRMED`（2026-09-12 22:53 +08:00，TASK-050）：v1.0.1 测试版已发布到 Gitee 发行版（初版 release `1140059`，后由 TASK-051 重建为 `1140075`，tag `v1.0.1`，预发布）。附件为通用包 `ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B）。公开接口读回确认附件可见；实际下载通用包比对 SHA-256 与本地产物完全一致。发布用的令牌未写入任何文件，用户在对话中提供，**需自行撤销**。
 - `CONFIRMED`（2026-09-12 22:36 +08:00，TASK-049）：release 包无法联网已修复。根因是 `main/AndroidManifest.xml` 从未声明 `INTERNET`（Flutter 模板只写在 debug/profile 清单，release 不合并），属发布阻断缺陷，影响全部 release 产物含 tag `v1.0.0`。补齐权限后版本升 `1.0.1+2` 重新出包：三个分 ABI APK 经 `aapt2 dump permissions` 确认均含 `INTERNET`，证书仍为正式证书；模拟器覆盖安装 4001→4002 后 `INTERNET: granted=true`，冷启动 1008 ms；端到端进入「设置 → 教务导入 → 继续」后**教务登录页完整渲染**，logcat 无 `ERR_*`；`flutter analyze` 无问题、`flutter test` 132/132。`v1.0.0` 产物作废不得分发。同轮定位 ISSUE-016（学期开学日随时区漂移一天），只记录未修。
