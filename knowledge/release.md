@@ -46,6 +46,23 @@ flutter build apk --release --split-per-abi
 - 不额外写 Gradle `splits {}`：Flutter CLI 已按 ABI 分包并自动加 `versionCode` 偏移（见 `build.gradle.kts` 内注释），两套机制并存会冲突。
 - **未开启 `minifyEnabled` / `shrinkResources`**：`third_party/flutter_inappwebview_android` 的兼容补丁与 AGP 9 已移除的默认 ProGuard 文件相关（见 DEC-008 / ISSUE-006），开混淆需单独验证，本轮不做。
 
+### 面向测试者的通用包（发给别人时用这个）
+
+分 ABI 包要求测试者自己选对架构，容易装错。发给他人测试时改用**同时含 arm64 与 32 位**的单个 APK：
+
+```bash
+flutter build apk --release --target-platform android-arm,android-arm64
+```
+
+`CONFIRMED`（2026-09-12，耗时 74.0 s）：产出 `app-release.apk`，38.6 MB（40,476,186 B），`versionName=1.0.1` / `versionCode=2`，正式证书（`2e8ac142…`），含 `INTERNET` / `POST_NOTIFICATIONS` / `SCHEDULE_EXACT_ALARM`。内部实测 arm64-v8a 19.7 MB + armeabi-v7a 17.3 MB 均为真实原生库（`libflutter.so` 两者都有），x86_64 仅 0.1 MB 存根 —— 真机都是 arm，无影响，但**因此这个包无法在 x86_64 模拟器上运行**。
+
+分发副本命名为 `ncpu-timetable-1.0.1-universal.apk`，SHA-256 `0b674d3b070ae50cb614a29d897f3db96faa314c2b0a8cc4b19e1fc81f242694`。
+
+注意：
+- 通用包与分 ABI 包的 `versionCode` 不可比（分包会加 ABI 偏移，arm64 为 2002 而通用包为 2）。**同一批测试者只用一种**，否则会出现"版本更高却被判为降级"的困惑。
+- 分 ABI 包与通用包签名相同，可互相覆盖（除上述 versionCode 方向问题外）。
+- **绝不要把 debug 证书签名的对照包**（`app-*-debugkey.apk`）发给任何人：debug 证书是公开的，任何人都能签一个同包名的更新把它顶掉。
+
 ## 验证
 
 ### 必查清单（每次出 release 包都要走一遍）
