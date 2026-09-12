@@ -19,15 +19,31 @@
 - Widget 日程计算（JVM / JUnit）：`gradlew :app:testDebugUnitTest`，EpochDay/ISO 星期、开学前、第 1 周、第 2 周周三、第 20 周周日、学期结束后、总周数非法、周次与星期过滤排序、时间来源优先级（13 个测试）。
 - ImportDiff：首次导入全为新增、内容相同（含不同对象/不同数组实例）无差异、单侧增删、手动课程双侧都不参与、同 id 详情变化（名称/教师/教室/备注、星期/节次/周次/起止时间）进入 `changed` 并保留新旧课程、未变化不进入任何列表（12 个测试）。
 - ImportSessionCleaner：平台实现未注册时静默降级、不抛异常（1 个测试）。
-- Timetable page：学期已结束/开学日在未来时显示提示条，学期日期在范围内时不显示；默认进入“今日”且只显示当天课程，切换“整周”后显示本周其他日期课程；整周一天一列、上午与“下午 / 晚间”两半等高，满课 2+3 张课程卡均渲染且两半内部没有 `Scrollable`，第 9-10 节保留在下半区，并可横向滑动到周日（5 个测试，按运行日期推算学期避免时间依赖）。
+- Timetable page：学期已结束/开学日在未来时显示提示条，学期日期在范围内时不显示；默认进入“今日”且只显示当天课程，空课时提供查看整周/新增/导入快捷入口，切换“整周”后显示本周其他日期课程；整周一天一列、上午与“下午 / 晚间”两半等高，满课 2+3 张课程卡均渲染且两半内部没有 `Scrollable`，第 9-10 节保留在下半区，并可横向滑动到周日；课程纸签的非对称外形与实色节次章有结构回归（6 个测试，按运行日期推算学期避免时间依赖）。
 - Notification preferences/database：默认关闭、默认提前 15 分钟、非法持久化值回退、设置表读写与监听（3 个测试）。
 - Notification planner：周次/星期日期、教学楼特殊作息、过去课程过滤、确定性 ID 与 480 条上限（4 个测试）。
 - Notification coordinator/settings：权限拒绝、精确闹钟降级、开启/关闭、提前量变化重排、排程失败回滚，以及设置页默认态/开关/下拉选择（10 个测试）。
 - Notification provider sync：启动时按当前数据排程，课程变化后自动重建（1 个测试）。
+- Theme preference：默认跟随系统、非法持久化值回退、三档设置入口与夜间值持久化（2 个测试）。
 - Android toolchain：`flutter doctor -v` 全绿 + Debug APK 静态校验（签名 + 清单 + ABI + 权限）。
 
 ## Passed
 
+- `flutter analyze`（2026-09-13 01:46 +08:00，TASK-058）：No issues found。
+- `flutter test`（2026-09-13 01:43 +08:00，TASK-058）：135 tests passed；新增主题默认值、非法值回退、三档入口与持久化回归。
+- `flutter build apk --debug`（2026-09-13，TASK-058）：成功并覆盖安装到 `ncpu_api36`。1080×2400 实画确认日间、手动夜间与跟随系统切换；`cmd uimode night yes/no` 下 App 实时响应且三档选择语义正确，系统状态栏/导航栏图标对比正常。logcat 未见本轮 App 致命异常或布局溢出；模拟器保持运行。
+- `flutter analyze`（2026-09-13 01:17 +08:00，TASK-057）：No issues found。
+- `flutter test`（2026-09-13 01:17 +08:00，TASK-057）：133 tests passed；整周窄卡的共享渐变与亮黄节次章结构回归通过，原有满课、超矮叠课、元数据与横滑回归均通过。
+- `flutter build apk --debug`（2026-09-13，TASK-057）：成功并覆盖安装到 `ncpu_api36`；1080×2400 整周/详情对照确认渐变语言统一，暖纸白日列和 44dp 低透明背景网格正常。UIAutomator 语义完整，logcat 无 App 致命异常或 `RenderFlex overflowed`。仅使用匿名测试课，模拟器按用户要求保持运行。
+- `flutter analyze`（2026-09-13 01:04 +08:00，TASK-056）：No issues found。
+- `flutter test`（2026-09-13 01:04 +08:00，TASK-056）：133 tests passed。首次完整运行主动发现超矮叠课的 `FittedBox` 内存在非零 flex 与无界宽度冲突，改为专用无弹性布局后完整重跑通过；地点与教师继续保留为独立文本节点。
+- `flutter build apk --debug`（2026-09-13，TASK-056）：成功并覆盖安装到 `ncpu_api36`；1080×2400 整周纸签实画、UIAutomator 语义和点击区域正常，logcat 无 App 致命异常或 `RenderFlex overflowed`。仅使用模拟器内匿名 `UI Demo / Alice / A101` 测试课，未操作真机或真实课程数据。
+- `flutter analyze`（2026-09-13 00:50 +08:00，TASK-055）：No issues found。
+- `flutter test`（2026-09-13 00:50 +08:00，TASK-055）：133 tests passed。
+- `flutter build apk --debug`（2026-09-13，TASK-055）：成功并安装到 `ncpu_api36`；1080×2400 真实画面检查校园数字手账版首页空状态、设置、整周匿名课程与详情页，UIAutomator 语义完整，logcat 无 App 致命异常或 `RenderFlex overflowed`。首次截图命中全新 Debug 安装后的 Flutter 启动画面，随后应用在 7.625 s 完成首次绘制并稳定渲染；该数据不作为 Release 性能结论。未操作真机或真实课程数据。
+- `flutter analyze`（2026-09-13 00:33 +08:00，TASK-054）：No issues found。
+- `flutter test`（2026-09-13 00:33 +08:00，TASK-054）：133 tests passed；新增今日空课快捷入口回归。
+- `flutter build apk --debug`（2026-09-13，TASK-054）：成功；因模拟器原装 versionCode 4002 Release 高于 Debug 的 2，Android 拒绝降级，随后只卸载 `emulator-5554` 的测试包并重新安装 Debug。1080×2400 真实画面检查首页空状态、设置、整周匿名课程与详情页；首次发现透明 AppBar 露黑后修复并重新构建复验。UIAutomator 语义完整，logcat 无 App 致命异常或 `RenderFlex overflowed`。未操作真机或真实课程数据。
 - `flutter analyze`（在 `R:\` 下）：No issues found。
 - `flutter build apk --release --split-per-abi`（2026-09-12 13:00 +08:00，TASK-045）：172.8 s 成功，产出 arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB；`apksigner verify --print-certs` 确认三个包均为正式证书（SHA-256 `2e8ac142…`）。在 `ncpu_api36` 卸载 debug 签名版本后安装 x86_64 release 包：冷启动 `Status: ok` / COLD / 937 ms，`flags=0x0` 非 debuggable，`run-as` 报 `package not debuggable`；logcat 无 `FATAL`/`AndroidRuntime`/`MissingPluginException`/`E/flutter`，按 App pid 过滤无 Cookie/Session/Token/password/账号/`jwglxt` 字段；语义树确认今日/整周双栏目与「第 2 周 · 0 门课程」渲染；`dumpsys appwidget` 确认 `TimetableWidgetProvider` 已注册（间接证明 release 下原生 SQLite 可用）。
 - `flutter analyze`（2026-09-12 12:35 +08:00，TASK-044）：No issues found。

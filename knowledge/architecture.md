@@ -10,7 +10,12 @@ Flutter 单机应用，Riverpod 负责依赖和界面状态，GoRouter 负责导
 lib/
   main.dart, app.dart        # app.dart 挂载 widget 同步作用域 + 生命周期观察
   core/{database,router,theme,utils}/
-    theme/course_colors.dart # 课程配色（课表 UI 与桌面小组件共用）
+    theme/app_palette.dart              # 品牌色与明暗基础色
+    theme/app_theme.dart                # light/dark ThemeData 与系统栏样式
+    theme/theme_preference.dart         # system/light/dark 偏好模型
+    theme/theme_preference_provider.dart# settings 表监听与持久化
+    theme/course_colors.dart            # 课程配色与共享渐变
+  core/widgets/ambient_background.dart  # 无重复纹理的明暗页面背景
   models/
     school.dart              # NcpuSchoolConfig（allowedHosts + allowedSchemes）
   features/timetable/{pages,widgets,providers,services}/
@@ -102,3 +107,11 @@ widget/
 - `NotificationCoordinator` 负责保存偏好、取消旧的待触发通知、重建未来调度，并合并同时发生的数据变化；首次开启若权限被拒或系统调度失败，开启状态保持/回滚为关闭。
 - Riverpod 监听当前学期、全部课程、节次时间和通知偏好；任一变化以及 App 回前台都会触发重排。取消只清理待触发通知，不删除已送达通知。
 - Android 清单登记 `RECEIVE_BOOT_COMPLETED`、`SCHEDULE_EXACT_ALARM` 与插件的两个 receiver；通知小图标为单色 `ic_stat_school`。详细行为与真机验收见 `knowledge/notifications.md`。
+
+## Theme and Visual System
+
+- `MaterialApp.router` 同时挂载 `AppTheme.light`、`AppTheme.dark` 与数据库驱动的 `ThemeMode`。设置键 `theme_mode` 取 `system` / `light` / `dark`，缺失或非法值回退为 `system`，不新增数据库 schema。
+- 页面背景由 `AmbientBackground` 提供：日间为暖白到低饱和蓝灰的纵向渐变，夜间为深蓝灰双层渐变；只绘制两个低透明径向环境光，不再使用重复纸张网格、圆点或实时模糊。
+- 卡片表面、边界、正文与弱信息使用 `ColorScheme` 语义色；海军蓝信息板、亮黄节次章、珊瑚/薄荷装饰和课程渐变作为品牌色保留固定对比关系。
+- 状态栏与系统导航栏图标亮度由明暗主题分别配置，避免浅底白图标或深底黑图标。
+- 当前已实画验证首页、整周、详情和设置；课程表单、导入风险门与导入预览的夜间逐页视觉仍待后续验收，详见 `report_2026-09-13_ui_theme_and_next_plan.md`。

@@ -1,5 +1,105 @@
 # Changelog
 
+## 2026-09-13 - Agent（TASK-059 UI/主题交接报告）
+
+Added:
+- 新增 `report_2026-09-13_ui_theme_and_next_plan.md`，系统汇总 TASK-054～058 的更新、实施问题、验证边界、遗留风险与下一步优化计划。
+
+Changed:
+- `knowledge/README.md` 增加报告入口；`architecture.md` 补充明暗主题、偏好持久化和背景组件结构；`current_state.md` 与 `tasks.md` 对齐当前 UI 验收状态。
+
+Validation:
+- `CONFIRMED` 报告中的代码结论已由本轮 `flutter analyze` 与 `flutter test` 135/135 重新验证。
+- 远端同步状态需以 TASK-059 完成后的 Git 推送读回为准；本条不提前宣称已上传。
+
+## 2026-09-13 - Agent（TASK-058 明暗主题与背景重做）
+
+Added:
+- 新增「跟随系统 / 日间 / 夜间」三档外观设置，选择写入现有本地 settings 表；默认跟随系统，非法旧值安全回退。
+- 新增独立夜间色板与暗色 `ThemeData`，覆盖背景、抬升表面、卡片边界、正文、弱信息、输入框、对话框、导航元素和系统栏。
+
+Changed:
+- 彻底移除用户不认可的重复纸张网格与圆点背景，改为无纹理的低对比纵向渐变和两处极弱环境光。
+- 课表首页、整周日列、通用课程卡、详情页和设置页的表面/正文改用主题语义色；课程深色渐变继续作为品牌层，避免夜间机械反色或高饱和发光。
+- 日间状态栏改用深色图标，夜间改用浅色图标；底部系统导航栏同步主题，解决浅色背景上白色系统图标对比不足。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 135/135；`flutter build apk --debug` 成功并覆盖安装。
+- `CONFIRMED` `ncpu_api36` 上检查日间首页/设置、手动夜间首页/整周/设置；跟随系统在 `cmd uimode night yes/no` 下实时切换，UIAutomator 三档 selected 语义正确，logcat 未见本轮 App 致命异常或布局溢出。
+- 系统夜间开关复原为 `no`，App 留在「跟随系统」，模拟器按用户要求保持运行。
+
+## 2026-09-13 - Agent（TASK-057 渐变统一与低疲劳背景）
+
+Added:
+- 在 `course_colors.dart` 新增共用 `courseGradientColors()`，让课程详情和整周课程卡共享同一渐变规则。
+
+Changed:
+- 详情主卡使用标准渐变强度；整周窄卡使用同源但更克制的渐变强度，统一亮黄节次章、白色课程名以及低对比时间/地点/教师。
+- 整周日列从冷白改为暖纸白，边框、阴影和上午/下午色适当降刺激。
+- 全局纸张网格间距从 30dp 放宽到 44dp，线条透明度降至 0.012，圆点透明度降至 0.024 且仅隔点绘制，保留手账识别度但降低持续视觉噪声。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 133/133；`flutter build apk --debug` 成功。
+- `CONFIRMED` Debug APK 覆盖安装到 `ncpu_api36` 后，1080×2400 整周与详情实际画面、UIAutomator 语义和点击详情均正常，logcat 无 App 致命异常或 `RenderFlex overflowed`。
+- 仅使用模拟器内匿名测试课；按用户要求本轮结束时不关闭模拟器。
+
+## 2026-09-13 - Agent（TASK-056 整周课程标签统一）
+
+Changed:
+- 整周专用 `_GridCourseCard` 从旧的淡色胶囊与左侧贯穿色条，改为米白渐变纸签、非对称圆角、细描边与轻阴影。
+- 节次改为实色小章，时间右对齐，课程名使用深海军蓝最高字重，地点与教师作为低对比辅助层；顶部短色签继续承担课程辨色。
+- 超矮叠课使用独立的无弹性紧凑排版，保留信息而不破坏固定格高和列内无滚动约束。
+
+Fixed:
+- 首次完整测试发现超矮课程标签中 `FittedBox` 与 `Expanded` 组合产生无界宽度布局冲突；拆分紧凑内容后修复，并保留地点/教师的独立文本语义。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 133/133；`flutter build apk --debug` 成功。
+- `CONFIRMED` Debug APK 覆盖安装到 `ncpu_api36` 后，1080×2400 整周课程纸签实画、UIAutomator 语义和点击区域正常，logcat 无 App 致命异常或 `RenderFlex overflowed`。
+- 仅使用模拟器内匿名测试课，未连接或修改真机。
+
+## 2026-09-13 - Agent（TASK-055 校园数字手账候选稿）
+
+Added:
+- 新增统一 `AppPalette`，建立深海军蓝、米白纸张、珊瑚、薄荷和亮黄的品牌色系统。
+- 页面背景新增静态网格与圆点纸张纹理；今日无课状态新增贴纸式 `FREE DAY` 插画。
+
+Changed:
+- 首页重做为非对称数字手账构图：品牌化 AppBar、深色栏目切换、珊瑚课程计数圆章、亮黄周进度贴纸和三色快捷操作块。
+- 课程卡、设置页与详情页统一为纸张卡片、深色信息块、彩色状态标签和更明确的字号层级，降低 TASK-054 通用 Material 卡片的模板感。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 133/133；`flutter build apk --debug` 成功。
+- `CONFIRMED` Debug APK 安装到 `ncpu_api36` 后，1080×2400 首页空状态、设置、整周匿名课程与详情页均无重叠/越界；UIAutomator 语义完整，logcat 无 App 致命异常或 `RenderFlex overflowed`。
+- 仅在模拟器创建匿名测试课，未连接或修改真机。该稿技术验证通过，但视觉是否通过仍待用户确认。
+
+## 2026-09-13 - Agent（TASK-054 UI 完成度升级）
+
+Added:
+- 新增轻量 `AmbientBackground` 页面背景组件，仅使用静态径向渐变，不引入实时模糊滤镜。
+- 今日无课状态新增「查看整周 / 新增课程 / 教务导入」快捷入口及 Widget 回归测试。
+
+Changed:
+- 统一首页、课程卡、设置页和详情页的背景、渐变、边框、阴影与圆角层级；今日主卡增加学期进度条。
+- 课程卡增加课程色图标容器和淡色渐变；设置学校主卡增加「仅本机存储」状态；详情主卡按课程色生成高对比渐变。
+
+Fixed:
+- 首次模拟器渲染发现透明 Scaffold/AppBar 组合露出 Android 黑色窗口底色，已为三个页面补稳定底色并重新构建复验。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 133/133；`flutter build apk --debug` 成功。
+- `CONFIRMED` Debug APK 安装到 `ncpu_api36` 后，1080×2400 首页空状态、设置页、整周窄列课程卡和课程详情均无重叠/越界；UIAutomator 语义完整，logcat 无 App 致命异常或 `RenderFlex overflowed`。
+- 仅在模拟器创建匿名 `UI Demo / Alice / A101` 测试课；未连接或修改真机。临时截图与 UI dump 在核验后删除。
+
+## 2026-09-13 - User / Agent（TASK-048 Release 真机体验确认）
+
+Changed:
+- TASK-048 从进行中移至完成；后续产品开发优先级转向多校接入与校历适配。
+
+Validation:
+- `CONFIRMED` 用户已安装 Release 版，并反馈“目前来说没什么”，当前使用未再发现 Debug 版的明显卡顿或其他异常。
+- 证据边界：这是用户真机体验确认，不是 `flutter run --profile` 或 `dumpsys gfxinfo` 的帧时间测量；只有后续复现卡顿时才需要继续性能采样。
+
 ## 2026-09-13 - Agent（清理 GitHub 仓库遗留内容）
 
 Changed:

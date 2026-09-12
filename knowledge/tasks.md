@@ -2,7 +2,8 @@
 
 ## Now
 
-- [ ] TASK-048 排查并优化 App 卡顿（2026-09-12 进行中）：用户报告把 Debug APK 装到手机上后有明显卡顿。已确认主因是 **Debug 构建本身**，不是代码：同一 AVD、同一份代码，冷启动 Debug 2739–3696 ms vs Release 937 ms；体积 Debug fat APK 198 MB vs Release arm64 21.2 MB。已产出 Debug 证书签名的 Release 包 `build/app/outputs/flutter-apk/app-release-arm64-debugkey.apk`（22.4 MB，原地覆盖升级不丢课表与登录态）供用户对照验证。**待用户回报结果**；若 Release 仍卡，下一步在真机用 `flutter run --profile` / `dumpsys gfxinfo` 量化掉帧，不靠猜。
+- [ ] TASK-059 编写 UI/主题更新报告并同步知识库（2026-09-13 进行中）：汇总 TASK-054~058 的更新、实施问题、证据边界、后续 UI 优化与多校衔接计划；核对知识库与源码后提交，并通过 `origin` 双推同步 Gitee/GitHub。不发布 APK、不改发行版。
+- [ ] TASK-055 重做 UI 为校园数字手账风格（2026-09-13 细节收口中）：整周课程标签已由 TASK-056 重构，并由 TASK-057 与详情页统一为同源深色渐变；用户不认可的背景网格已由 TASK-058 完全移除，并新增日间/夜间/跟随系统三档主题。`flutter analyze` 无问题、`flutter test` 135/135，Debug APK 构建安装成功，UIAutomator 语义完整，logcat 无致命异常或布局溢出。整体视觉仍等待用户继续验收，不提前标 Done。
 
 ## Next
 
@@ -17,6 +18,11 @@
 
 ## Done
 
+- [x] TASK-058 重做明暗主题与背景（2026-09-13 完成）：彻底移除用户不认可的纸张网格与圆点，改为无重复纹理的低对比纵向渐变和两处极弱环境光；新增「跟随系统 / 日间 / 夜间」三档本地持久化设置。夜间使用独立深蓝灰背景、抬升表面、边界、正文和弱信息色，不做机械反色；课表、整周日列、课程卡、详情与设置均接入语义色，系统状态栏/导航栏图标同步明暗。`flutter analyze` 无问题、`flutter test` 135/135，Debug APK 构建并覆盖安装到 `ncpu_api36`；日间、手动夜间、跟随系统实时切换均以 1080×2400 画面和 UIAutomator 验证，模拟器保持运行。
+- [x] TASK-057 统一课程详情与整周标签的渐变语言并降低视觉疲劳（2026-09-13 完成）：在 `course_colors.dart` 提取共用 `courseGradientColors()`；详情主卡使用标准强度，整周窄卡使用同源但较低强度的深色渐变，统一亮黄节次章、白色课程名与低对比时间/地点/教师。整周日列由冷白改为暖纸白，边框、阴影与上午/下午色降低刺激；全局纸张网格从 30dp 加密线改为 44dp 低透明度网格，并仅隔点绘制圆点。`flutter analyze` 无问题、`flutter test` 133/133，Debug APK 在 `ncpu_api36` 覆盖安装；1080×2400 整周与详情真实画面、UI 语义及 logcat 均通过。按用户要求模拟器保持运行。
+- [x] TASK-056 重做整周课表课程标签（2026-09-13 完成）：定位到整周使用独立 `_GridCourseCard`，此前没有随通用 `CourseCard` 一起换肤。移除旧的整卡淡色胶囊与左侧贯穿色条，改为米白渐变纸签、非对称圆角、细描边与阴影、顶部短色签、实色节次章、右对齐时间以及分层的课程名/地点/教师；超矮叠课使用无弹性专用排版。保留固定节次格、点击详情、完整元数据和列内无纵向滚动。`flutter analyze` 无问题、`flutter test` 133/133，Debug APK 构建安装成功；`ncpu_api36` 1080×2400 实际画面与 UI 语义通过，logcat 无致命异常或布局溢出。
+- [x] TASK-054 提升 App UI 完成度（2026-09-13 技术完成、视觉未通过）：基于 `ncpu_api36` 的 1080×2400 真实 Android 画面，为首页、课程卡、设置页和详情页增加轻量氛围背景、渐变与快捷入口；`flutter analyze` 无问题、`flutter test` 133/133，模拟器无致命异常或布局溢出。但用户随后明确反馈结果仍“过于简陋”，不认可为简约风，因此该方案不作为最终视觉验收，转 TASK-055 整体重做。
+- [x] TASK-048 排查并优化 App 卡顿（2026-09-13 完成）：用户报告 Debug APK 在真机有明显卡顿；同一 AVD、同一代码的对照为冷启动 Debug 2739–3696 ms、Release 937 ms，体积 Debug fat APK 198 MB、Release arm64 21.2 MB，主因确定为 Debug 构建开销。用户安装 Release 版后反馈“目前来说没什么”，即当前使用未再发现明显卡顿或异常。该结论属于用户真机体验确认，不等同于 Profile 帧数据；如后续复现，再用 `flutter run --profile` / `dumpsys gfxinfo` 量化定位。
 - [x] TASK-053 清理 GitHub 仓库遗留内容（2026-09-13 完成）：按用户「只留本项目」的要求，关闭 PR #1（`copilot/test-branch` → `main`，标题 "Update README"），删除分支 `copilot/test-branch` 与 `main`。删除前确认待删内容无实质资产（`main` 仅 16 字节 README 占位 `31e94be5`；`copilot/test-branch` 仅改 README `+2/−1`，`099f69ce`），提交号已记入 `knowledge/release.md` 便于找回。清理后 GitHub 只剩 `master`，默认分支 `master`，未关闭 PR 为 0，与 Gitee 分支/tag 集合一致。
 - [x] TASK-052 镜像仓库到 GitHub（2026-09-13 完成）：新增远端 `github` = `https://github.com/cxi75100-sketch/test1`，推送 `master` 与 tag `v1.0.0`/`v1.0.1`，默认分支改为 `master`；创建 GitHub 发行版 `v1.0.1`（id `387624284`，预发布）并上传与 Gitee 相同的两个 APK。`origin` 配置双 push 地址（Gitee + GitHub），一条 `git push origin` 同步两边。GitHub 直连超时，已配置仓库级、仅对 github.com 生效的 Clash 代理；Gitee 仍直连。验证：GitHub `master` = 本地 `HEAD`，下载通用包 SHA-256 与本地一致，发行版说明中文正常。GitHub 原有 `main` 占位与 `copilot/test-branch`（有未关闭 PR）未动。详见 `knowledge/release.md`。
 - [x] TASK-051 清理公开文档中的项目归属表述并重建发行版（2026-09-12 完成）：从 `README.md` 与 6 个知识库文档移除项目归属与跨知识库同步关系的公开表述（含一处指向外部知识库的完整路径），只保留「本目录是独立 Git 仓库与独立知识库」。该表述已随基线提交 `5509a85` 推送，且 `v1.0.1` 发行版附带的源码压缩包是 tag 快照、仍会带上它，因此删除旧发行版 `1140059`、删除并重建 tag `v1.0.1` 到清理后的提交 `cbc0f20`、重建发行版 `1140075` 并重传两个 APK，**tag 名称与下载地址不变**。验证：工作区与重建后的源码包（686,693 B / 500 文件）搜索均 0 命中；重新下载通用包 SHA-256 与本地产物一致。`UNVERIFIED`/未做：提交历史仍保留旧文本，彻底清除需重写历史并强推，属高风险操作需单独授权。
