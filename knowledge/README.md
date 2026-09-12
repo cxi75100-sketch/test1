@@ -19,6 +19,7 @@
 - `home_widget.md`：Android 桌面小组件协议、刷新时机与真机验收步骤
 - `notifications.md`：Android 本地上课提醒的行为、权限、调度与真机验收步骤
 - `release.md`：release 签名配置、分 ABI 打包、验证结果与分发步骤
+- `plan_multischool_2026-09-12.md`：多校接入与校历适配计划书（含单校硬编码清单与待决策项）
 - `testing.md`：测试范围与结果
 - `changelog.md`：实质变更记录
 - `incident_2026-09-11_db_injection.md`：事故报告 —— 真机数据库注入因 GBK 编码导致 App 课表加载失败

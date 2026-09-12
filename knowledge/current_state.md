@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-12 13:02 +08:00
+2026-09-12 13:08 +08:00
 
 ## Project Boundary
 
@@ -44,6 +44,7 @@
 
 ## Not Started
 
+- 多校接入与校历适配：计划书已就绪（`knowledge/plan_multischool_2026-09-12.md`，TASK-046），**未开工**，等待第 9 节 D1–D6 决策。阶段 0–1 为纯重构，可立即执行；阶段 3 需一所真实学校才能验收。
 - Gitee 发行版创建与 APK 附件上传（release 附件 API 需要 `access_token`，本轮未执行，需在网页端操作）。
 - Play Store 上传所需的 AAB / v3 签名 / 分包策略。
 
@@ -107,7 +108,11 @@
 
 release 分发侧只差发布动作：APK 已在 `build/app/outputs/flutter-apk/`（`app-arm64-v8a-release.apk` 21.2 MB、`app-armeabi-v7a-release.apk` 18.7 MB，SHA-256 见 `knowledge/release.md`），在 Gitee 发行版页面选 `v1.0.0` 上传即可；release 附件 API 需要 `access_token`，本轮未由 Agent 执行。
 
+多校接入方向：计划书（`knowledge/plan_multischool_2026-09-12.md`）已就绪，**在用户回答 D1–D6 之前不要开工**。用户若选择先做阶段 0–1，可从「引入 `SchoolProfile` 并把 NCPU 常量搬进去、`ensureDefaults()` 改为只播种不覆盖」起步，该阶段行为不变、可由现有 132 个测试兜底。
+
 提交邮箱决策已关闭：用户已指定后续使用的专用邮箱，仅写入本仓库 Git 配置。历史 9 个提交不改写；若以后需要清理历史，必须作为独立高风险任务再确认。
+
+多校方向已出计划书（`knowledge/plan_multischool_2026-09-12.md`，TASK-046）：当前把「哪些课」与「什么时候上」耦合在 `NcpuXxx` 命名空间下，是单校化无法扩展的根因；计划书给出 `SchoolProfile` / `TermCalendar` / `BellSchedule` 目标模型与「用户覆盖 > 学期记录 > 学校档案 > 应用兜底」优先级链，并列明 16 处单校假设（其中 `AppDatabase.ensureDefaults()` 每次启动覆盖作息、构建期 cleartext 白名单、Dart/Kotlin 周次双实现风险最高）。**未改任何代码**，等待 D1–D6 决策后再开工。
 
 ## Handoff
 

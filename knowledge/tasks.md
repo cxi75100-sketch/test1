@@ -7,6 +7,7 @@
 ## Next
 
 - [ ] TASK-039 Android 真机验收本地上课提醒：通知权限、精确闹钟权限/降级、实际到点通知、课程变化重排与重启恢复；步骤见 `knowledge/notifications.md`。
+- [ ] TASK-047 多校接入与校历适配（等待决策）：计划书见 `knowledge/plan_multischool_2026-09-12.md`。阶段 0–1（抽象 `SchoolProfile`/`TermCalendar`/`BellSchedule`、`ensureDefaults()` 停止覆盖作息、`schoolId` 迁移与格位去硬编码）为纯重构，可立即开工；阶段 3 需要一所真实学校才能验收。开工前需先确认计划书第 9 节的 D1–D6。
 
 ## Blocked
 
@@ -16,6 +17,7 @@
 
 ## Done
 
+- [x] TASK-046 编写多校接入与校历适配计划书（2026-09-12 完成）：产出 `knowledge/plan_multischool_2026-09-12.md`。内容包括单校硬编码清单（16 处，含 `ensureDefaults()` 每次启动覆盖作息、构建期 cleartext 白名单、Dart/Kotlin 双实现）、三个正交可变维度（数据获取/校历语义/作息表）、目标模型（`SchoolProfile` / `TermCalendar` / `BellSchedule`）、「用户覆盖 > 学期记录 > 学校档案 > 应用兜底」优先级链、校历不同时间的逐项处理（第一周周一、总周数、节次数与时间、上下午划分、调休停课分级 L1–L3、单双周为推论、时区）、新校接入 runbook 六步、阶段 0–4 分期与验收标准。**只做设计，未改任何代码**；第 9 节列出 D1–D6 待用户决策。
 - [x] TASK-045 release 签名与分 ABI 打包（2026-09-12 完成）：`android/app/build.gradle.kts` 接入由 `android/key.properties` 驱动的 release 签名，文件缺失时回退 debug 签名；keystore 放在仓库外 `D:\Tools\android-keys\`，`.gitignore` 补 `android/key.properties`、`**/*.jks`、`**/*.keystore`。`flutter build apk --release --split-per-abi` 产出三个分 ABI APK（arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB，对照 debug fat APK 198 MB），证书为正式证书（SHA-256 `2e8ac142…`）。已在 `ncpu_api36` 上卸载 debug 签名版本后安装 x86_64 release 包：冷启动 `Status: ok` / 937 ms、`flags=0x0` 非 debuggable、logcat 无致命异常且 App 日志无会话字段、语义树确认今日/整周双栏目渲染、`TimetableWidgetProvider` 已注册（间接证明 release 下原生 SQLite 正常）。`arm64-v8a` 真机安装留待 TASK-019 / TASK-039 验收之后。详见 `knowledge/release.md`。Gitee 发行版附件仍需在网页端上传（API 需 `access_token`）。
 - [x] TASK-044 移除整周课表日列内部的上下滚动（2026-09-12 完成）：上午固定为 1-2 / 3-4 节两格，下午/晚间固定为 5-6 / 7-8 / 9-10 节三格，满课五张卡一屏完整可见；课程卡压缩为课程名、节次/时间、教室/教师三层，新增入口移至顶部避免遮挡末节课程。新增满课 Widget 回归确认两半等高、五门课均渲染且半区内无 `Scrollable`；`flutter analyze` 无问题，`flutter test` 132/132，Debug APK 构建、API 36 模拟器覆盖安装与真实画面验收通过，logcat 无致命异常或布局溢出。未修改课程数据。
 - [x] TASK-043 将整周课表重做为横向周视图（2026-09-12 完成）：一天一列，每列上半为上午 1-4 节、下半为“下午 / 晚间”5-10 节且严格等高，横向滑动查看七天；移除重复日期条，新增滑动提示、当天强调、每日课程计数与窄列课程卡，保留课程名、节次、时间、教室、教师和详情入口。`flutter analyze` 无问题，`flutter test` 132/132；Debug APK 构建、API 36 模拟器覆盖安装、冷启动和横滑视觉验收通过，logcat 无致命异常或布局溢出。未修改课程数据。
