@@ -44,6 +44,12 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Release 签名材料：绝不入库（公开仓库）。keystore 本体存放在仓库外的
+# D:\Tools\android-keys\，此处仅为兜底，防止误把副本放进项目目录。
+android/key.properties
+**/*.jks
+**/*.keystore
+
 # Widget Preview related
 .widget_preview/
 
