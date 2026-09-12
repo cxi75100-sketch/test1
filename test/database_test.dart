@@ -44,6 +44,20 @@ void main() {
     final values = await database.watchCourses('s1').first;
     expect(values.map((item) => item.id).toSet(), {'manual', 'new-import'});
   });
+
+  test(
+    'settings can be watched and updated without a schema migration',
+    () async {
+      expect(await database.watchSettings().first, isEmpty);
+
+      await database.setSetting('notification_enabled', 'true');
+      await database.setSetting('notification_minutes_before', '30');
+
+      final values = await database.allSettings();
+      expect(values['notification_enabled'], 'true');
+      expect(values['notification_minutes_before'], '30');
+    },
+  );
 }
 
 Course _course(

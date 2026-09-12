@@ -38,6 +38,13 @@ lib/
     services/
       widget_payload_builder.dart # 整周课表快照 JSON（纯 Dart）
       widget_bridge.dart          # MethodChannel 封装
+  features/notifications/
+    models/notification_preferences.dart # 默认值、持久化键和可选提前量
+    providers/notification_providers.dart # 数据监听和依赖组装
+    services/
+      notification_planner.dart     # 学期课程 → 有界未来提醒计划
+      notification_scheduler.dart   # Android 权限、时区和系统通知适配
+      notification_coordinator.dart # 偏好写入、并发合并、失败回滚和重排
   features/settings/{pages,providers}/
   services/
 ```
@@ -89,4 +96,9 @@ widget/
 
 ## Notifications
 
-课程数据稳定后由 NotificationService 根据课程和提醒偏好生成本地通知；重新导入时仅重建目标学期通知。
+- 设置保存在既有 `settings` 表，不增加数据库 schema：`notification_enabled` 默认 `false`，`notification_minutes_before` 默认 `15`，可选 5/10/15/30。
+- `NotificationPlanner` 只做纯计算：以当前学期第一周周一、课程教学周和星期生成日期，通过 `CourseTimeService.resolve` 复用课程显式时间及教学楼特殊作息；过滤过去时间和非法数据，排序后最多保留 480 条未来提醒，给系统厂商限制留余量。
+- `LocalNotificationScheduler` 使用 `flutter_local_notifications` 与 `timezone`，明确按 `Asia/Shanghai` 构造本地上课时间。Android 首次开启时申请通知权限和精确闹钟权限；精确闹钟不可用时降级为 `inexactAllowWhileIdle`，不伪装为精确提醒。
+- `NotificationCoordinator` 负责保存偏好、取消旧的待触发通知、重建未来调度，并合并同时发生的数据变化；首次开启若权限被拒或系统调度失败，开启状态保持/回滚为关闭。
+- Riverpod 监听当前学期、全部课程、节次时间和通知偏好；任一变化以及 App 回前台都会触发重排。取消只清理待触发通知，不删除已送达通知。
+- Android 清单登记 `RECEIVE_BOOT_COMPLETED`、`SCHEDULE_EXACT_ALARM` 与插件的两个 receiver；通知小图标为单色 `ic_stat_school`。详细行为与真机验收见 `knowledge/notifications.md`。

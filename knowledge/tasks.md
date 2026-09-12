@@ -6,7 +6,7 @@
 
 ## Next
 
-- [ ] TASK-014 实现本地通知
+- [ ] TASK-039 Android 真机验收本地上课提醒：通知权限、精确闹钟权限/降级、实际到点通知、课程变化重排与重启恢复；步骤见 `knowledge/notifications.md`。
 
 ## Blocked
 
@@ -15,6 +15,8 @@
   跨天重算未验（建议改学期开学周一而非改系统日期）。缩放无独立真机记录，按未验证处理。验收步骤见 `knowledge/home_widget.md`。
 
 ## Done
+
+- [x] TASK-014 实现 Android V1 本地上课提醒（2026-09-12 完成）：默认关闭，用户主动开启时申请通知权限；默认提前 15 分钟，可选 5/10/15/30 分钟。按当前学期、课程周次/星期和统一作息生成未来提醒，课程、学期、作息、偏好变化及 App 回前台时重建；精确闹钟未授权时降级为非精确提醒；调度失败会回滚开启状态。`flutter analyze` 无问题、`flutter test` 130/130、Android JVM 单测 13/13、Debug APK 构建与通知权限/receiver/图标静态校验通过。真机行为转 TASK-039。
 
 - [x] TASK-038 切换本仓库 Git 提交邮箱并推送已验证修复（2026-09-11 完成）：仅设置仓库级 `user.name` / `user.email`，不影响全局 Git 配置，不改写前 9 个提交。提交前扫描确认 17 个文件无邮箱明文、会话凭据赋值或构建产物；`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测成功。修复提交 `40c75cd` 已推送到 Gitee `master`，本地、tracking 与远端读回一致。
 

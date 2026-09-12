@@ -1,5 +1,15 @@
 # Issues
 
+## ISSUE-014 本地上课提醒真机行为待验收
+
+Status: Open（代码与构建已完成，真机行为未验证）
+
+Observed: TASK-014 已实现通知偏好、未来提醒计划、Android 权限请求、精确闹钟降级、数据变化重排和开机恢复声明；自动测试与 Debug APK 静态校验通过。本轮 `adb devices -l` 无设备。
+
+Impact: 不能确认目标手机的通知权限/精确闹钟系统页、厂商后台限制、实际到点时延、课程变化后的待触发通知替换和重启恢复。
+
+Next Step: 连接 Android 真机后按 `knowledge/notifications.md` 执行 TASK-039；不修改系统时间，不保存课程详情或会话数据，使用临时手动课程并在验收后删除。
+
 ## ISSUE-001 南昌工学院课表接口确认（原“接口未知”）
 
 Status: Resolved（接口形状与解析代码已确认；端到端验收另见 TASK-021）

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-09-12 - Agent（TASK-014 Android 本地上课提醒）
+
+Added:
+- 新增 Android 本地课程提醒：默认关闭；首次由用户主动开启并申请通知权限；默认提前 15 分钟，可选 5/10/15/30 分钟。
+- 新增纯 Dart 提醒计划器、系统通知适配器、协调器和 Riverpod 同步层；复用学期、课程、节次与 `CourseTimeService`，课程/学期/作息/偏好变化及 App 回前台时重建未来提醒。
+- 新增 Android 通知权限、精确闹钟与开机恢复 receiver、单色状态栏图标；新增 `knowledge/notifications.md` 真机验收说明。
+
+Safety and behavior:
+- 精确闹钟未授权时明确降级为非精确提醒；通知权限拒绝或系统排程失败不保留错误的开启状态。
+- 同时发生的监听刷新会合并为串行重排；只取消待触发通知，不清除已送达通知；未来提醒上限为 480 条。
+- 设置沿用既有 `settings` 表，无数据库迁移；未记录账号、课程原始响应或会话信息。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 130/130；Android JVM 单测 13/13；Debug APK 构建成功。
+- `CONFIRMED` APK 静态读回通知权限、两个调度 receiver 与通知图标。
+- `UNVERIFIED` 当前没有 Android 设备连接，尚未验证系统权限弹窗、实际到点通知、精确闹钟降级效果与重启恢复；转 TASK-039。
+
 ## 2026-09-11 - Agent（TASK-038 切换仓库提交邮箱并推送修复）
 
 - 按用户确认将 Git 作者邮箱仅配置在本仓库，保留全局配置与前 9 个提交历史不变。

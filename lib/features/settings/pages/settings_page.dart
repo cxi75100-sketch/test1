@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../models/semester.dart';
+import '../../notifications/models/notification_preferences.dart';
+import '../../notifications/providers/notification_providers.dart';
+import '../../notifications/services/notification_coordinator.dart';
 import '../../timetable/providers/timetable_providers.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -11,6 +14,10 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final semester = ref.watch(activeSemesterProvider);
+    final notificationPreferences = ref.watch(notificationPreferencesProvider);
+    final reminder =
+        notificationPreferences.value ?? const NotificationPreferences();
+    final reminderLoading = notificationPreferences.isLoading;
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -107,17 +114,62 @@ class SettingsPage extends ConsumerWidget {
           ),
           const SizedBox(height: 24),
           const _SectionLabel('偏好与隐私'),
-          const Card(
+          Card(
             child: Column(
               children: [
                 _SettingsTile(
-                  icon: Icons.notifications_none_rounded,
-                  iconColor: Color(0xFFF09A4B),
+                  icon: reminder.enabled
+                      ? Icons.notifications_active_rounded
+                      : Icons.notifications_none_rounded,
+                  iconColor: const Color(0xFFF09A4B),
                   title: '上课提醒',
-                  subtitle: '将在教务导入稳定后开放',
+                  subtitle: reminder.enabled
+                      ? '已开启 · 提前 ${reminder.minutesBefore} 分钟'
+                      : '已关闭 · 默认提前 15 分钟',
+                  trailing: Switch(
+                    value: reminder.enabled,
+                    onChanged: reminderLoading
+                        ? null
+                        : (value) =>
+                              _setNotificationEnabled(context, ref, value),
+                  ),
                 ),
-                Padding(padding: EdgeInsets.only(left: 64), child: Divider()),
-                _SettingsTile(
+                if (reminder.enabled) ...[
+                  const Padding(
+                    padding: EdgeInsets.only(left: 64),
+                    child: Divider(),
+                  ),
+                  _SettingsTile(
+                    icon: Icons.schedule_rounded,
+                    iconColor: const Color(0xFF4967D8),
+                    title: '提醒时间',
+                    subtitle: '课程开始前',
+                    trailing: DropdownButton<int>(
+                      value: reminder.minutesBefore,
+                      underline: const SizedBox.shrink(),
+                      items: notificationMinuteOptions
+                          .map(
+                            (minutes) => DropdownMenuItem(
+                              value: minutes,
+                              child: Text('$minutes 分钟'),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: reminderLoading
+                          ? null
+                          : (value) {
+                              if (value != null) {
+                                _setNotificationMinutes(ref, value);
+                              }
+                            },
+                    ),
+                  ),
+                ],
+                const Padding(
+                  padding: EdgeInsets.only(left: 64),
+                  child: Divider(),
+                ),
+                const _SettingsTile(
                   icon: Icons.shield_outlined,
                   iconColor: Color(0xFF7A67C7),
                   title: '隐私说明',
@@ -147,6 +199,35 @@ class SettingsPage extends ConsumerWidget {
 
   static String _date(DateTime value) =>
       '${value.year}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
+
+  Future<void> _setNotificationEnabled(
+    BuildContext context,
+    WidgetRef ref,
+    bool enabled,
+  ) async {
+    final result = await ref
+        .read(notificationCoordinatorProvider)
+        .setEnabled(enabled);
+    if (!context.mounted) return;
+    if (!enabled) {
+      if (result == NotificationEnableResult.failed) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('提醒已关闭，但系统排程清理失败，请重试')));
+      }
+      return;
+    }
+    final message = switch (result) {
+      NotificationEnableResult.enabled => '上课提醒已开启',
+      NotificationEnableResult.enabledInexact => '已开启；精确闹钟未授权，系统可能延迟提醒',
+      NotificationEnableResult.permissionDenied => '未获得通知权限，提醒保持关闭',
+      NotificationEnableResult.failed => '开启失败，请稍后重试',
+    };
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _setNotificationMinutes(WidgetRef ref, int minutes) =>
+      ref.read(notificationCoordinatorProvider).setMinutesBefore(minutes);
 
   Future<void> _clearSemester(
     BuildContext context,
@@ -208,6 +289,7 @@ class _SettingsTile extends StatelessWidget {
     required this.subtitle,
     this.titleColor,
     this.onTap,
+    this.trailing,
   });
 
   final IconData icon;
@@ -216,6 +298,7 @@ class _SettingsTile extends StatelessWidget {
   final String subtitle;
   final Color? titleColor;
   final VoidCallback? onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) => ListTile(
@@ -237,7 +320,9 @@ class _SettingsTile extends StatelessWidget {
       padding: const EdgeInsets.only(top: 3),
       child: Text(subtitle, style: const TextStyle(height: 1.35)),
     ),
-    trailing: onTap == null ? null : const Icon(Icons.chevron_right_rounded),
+    trailing:
+        trailing ??
+        (onTap == null ? null : const Icon(Icons.chevron_right_rounded)),
     onTap: onTap,
   );
 }

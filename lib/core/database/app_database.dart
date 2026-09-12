@@ -174,6 +174,19 @@ class AppDatabase extends _$AppDatabase {
     return rows.map(_sectionTimeFromRow).toList();
   }
 
+  Stream<Map<String, String>> watchSettings() =>
+      select(settings)
+          .watch()
+          .map((rows) => {for (final row in rows) row.key: row.value});
+
+  Future<Map<String, String>> allSettings() async {
+    final rows = await select(settings).get();
+    return {for (final row in rows) row.key: row.value};
+  }
+
+  Future<void> setSetting(String key, String value) => into(settings)
+      .insertOnConflictUpdate(SettingsCompanion.insert(key: key, value: value));
+
   Stream<List<domain.SectionTime>> watchSectionTimes() =>
       (select(sectionTimeEntries)
             ..orderBy([(row) => OrderingTerm.asc(row.section)]))

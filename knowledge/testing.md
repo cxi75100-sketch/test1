@@ -20,11 +20,20 @@
 - ImportDiff：首次导入全为新增、内容相同（含不同对象/不同数组实例）无差异、单侧增删、手动课程双侧都不参与、同 id 详情变化（名称/教师/教室/备注、星期/节次/周次/起止时间）进入 `changed` 并保留新旧课程、未变化不进入任何列表（12 个测试）。
 - ImportSessionCleaner：平台实现未注册时静默降级、不抛异常（1 个测试）。
 - Timetable page：学期已结束/开学日在未来时显示提示条，学期日期在范围内时不显示（3 个测试，按运行日期推算学期避免时间依赖）。
+- Notification preferences/database：默认关闭、默认提前 15 分钟、非法持久化值回退、设置表读写与监听（3 个测试）。
+- Notification planner：周次/星期日期、教学楼特殊作息、过去课程过滤、确定性 ID 与 480 条上限（4 个测试）。
+- Notification coordinator/settings：权限拒绝、精确闹钟降级、开启/关闭、提前量变化重排、排程失败回滚，以及设置页默认态/开关/下拉选择（10 个测试）。
+- Notification provider sync：启动时按当前数据排程，课程变化后自动重建（1 个测试）。
 - Android toolchain：`flutter doctor -v` 全绿 + Debug APK 静态校验（签名 + 清单 + ABI + 权限）。
 
 ## Passed
 
 - `flutter analyze`（在 `R:\` 下）：No issues found。
+- `flutter test`（2026-09-12 10:56 +08:00，TASK-014）：130 tests passed；新增本地通知偏好、计划、协调器、设置 UI 与 provider 同步测试。
+- `gradlew :app:testDebugUnitTest --rerun-tasks`（2026-09-12，TASK-014）：13 tests / 0 failures / 0 errors / 0 skipped。
+- `flutter build apk --debug`（2026-09-12，TASK-014）：成功；通知权限、调度 receiver 与小图标已在 APK 静态读回。
+  - APK：207,582,794 B，SHA256 `b85beaea49e23a993be73d6fae4669d11791f82c58ae7b7591a40a2bdd7084a0`；apksigner v2=true，Signer `C=US, O=Android, CN=Android Debug`。
+  - aapt2：`RECEIVE_BOOT_COMPLETED`、`SCHEDULE_EXACT_ALARM`、`POST_NOTIFICATIONS` 均存在；`ScheduledNotificationReceiver`、`ScheduledNotificationBootReceiver` 与 `ic_stat_school` 均已打包。
 - `flutter test`（2026-09-11 20:22 +08:00，TASK-037）：112 tests passed；包含批量修改弹窗滚动回归。
 - `flutter test`（2026-09-11 20:04 +08:00，TASK-035）：111 tests passed。
 - `gradlew :app:testDebugUnitTest --rerun`（2026-09-11 20:05，TASK-035）：13 tests / 0 failures / 0 errors / 0 skipped（Kotlin 未改动，本轮强制重跑确认）。
@@ -109,12 +118,13 @@
 - Android 模拟器：未安装，如需可用需追加 `sdkmanager "emulator" "system-images;android-36;google_apis;x86_64"`。
 - WebView / 教务导入：`CONFIRMED`。用户已在真机通过 Debug 采集工具登录并取得脱敏接口形状；2026-09-11 又在真机完成「登录 → 预览 27 条 → 确认写入 → 重启持久化」的完整端到端验收（TASK-021），替换等价且手动课程经 rowid 位移反证保留。
 - 桌面小组件：`PARTIAL`。真机已确认启动器添加、表头与当天课程渲染、点击打开 App（ISSUE-013 修复后复验）；尚未验证数据变更后的即时刷新、缩放、「还有 N 门课」溢出与跨天重算（TASK-019 剩余项）。
+- 本地上课提醒：`PARTIAL`。纯逻辑、数据库、设置交互、provider 重排、Android 构建与清单静态校验已确认；设备权限弹窗、精确/非精确实际行为、到点通知和重启恢复尚未真机验证（TASK-039）。
 - iOS：未开始，首版仅保持代码兼容。
 
 ## Not Covered
 
 - 导入预览差异区块在真实教务数据变化时的真机显示：当日教务数据未变，只观察到「无变化」；新增/移除/修改三类排版与「旧值 → 新值」明细由 widget 测试覆盖。
-- 通知权限、时区、系统重启后的调度。
+- 本地通知的真机权限弹窗、系统设置中的精确闹钟授权、实际到点通知、厂商后台限制、课程变化后的系统待触发列表与重启恢复；时区和调度纯逻辑已有自动化覆盖，不能替代真机验证。
 - 自动测试已覆盖重新导入的替换持久化与手动课程保留；真机侧已在 TASK-021 验证。
 - Release 签名（当前 Debug 用 Android Debug 证书；release 走 debug signingConfig，`android/app/build.gradle.kts` 已注明 TODO）。
 - Play Store 上传所需的 AAB / v3 签名 / 分包策略。
