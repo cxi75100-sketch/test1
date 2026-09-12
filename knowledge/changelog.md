@@ -15,6 +15,7 @@ Safety and behavior:
 Validation:
 - `CONFIRMED` `flutter analyze` 无问题；`flutter test` 130/130；Android JVM 单测 13/13；Debug APK 构建成功。
 - `CONFIRMED` APK 静态读回通知权限、两个调度 receiver 与通知图标。
+- `CONFIRMED` 功能提交 `0342855` 已推送到 Gitee `master`，author/committer 均使用仓库级专用 QQ 邮箱。
 - `UNVERIFIED` 当前没有 Android 设备连接，尚未验证系统权限弹窗、实际到点通知、精确闹钟降级效果与重启恢复；转 TASK-039。
 
 ## 2026-09-11 - Agent（TASK-038 切换仓库提交邮箱并推送修复）

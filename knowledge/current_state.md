@@ -61,11 +61,11 @@
 - 小组件协议为 `schemaVersion=1`；修改时必须同步 Dart/Kotlin 常量与两侧测试。
 - 当前学期开学第一周周一为 `2026-08-31`（用户确认，且与教学周历一致）；`2026-09-10` 起属于第 2 周。该值已固化为代码默认常量，两台真机的生产库和小组件载荷均已同步为该日期。
 - 两台真机：vivo V1981A（Android 12 / API 31，2026-09-10 完成覆盖安装与冷启动验收）与 OnePlus PLC110（Android 16 / API 36 / arm64-v8a，2026-09-11 完成全新安装）。
-- `CONFIRMED`：Git 基线已建立并推送，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库）；TASK-035–038 收尾后本地与远端同为 `ff4b702`。后续提交使用用户指定的仓库级专用邮箱，未改写前 9 个提交的历史。
+- `CONFIRMED`：Git 基线已建立并推送，远端 `origin` 为 `https://gitee.com/chenxihh/test_c.git`（公开仓库）；TASK-014 功能提交 `0342855` 已推送，本地、tracking 与 Gitee 远端读回一致。后续提交使用用户指定的仓库级专用邮箱，未改写前 9 个提交的历史。
 
 ## Validation Snapshot
 
-- `CONFIRMED`（2026-09-12 10:57 +08:00，TASK-014）：本地上课提醒默认关闭、15 分钟默认值、5/10/15/30 选项、权限拒绝、精确闹钟降级、调度失败回滚、未来计划与数据变化重排均有自动化覆盖；`flutter analyze` 无问题、`flutter test` 130/130、Android JVM 单测 13/13、Debug APK 构建及权限/receiver/图标静态校验通过。`UNVERIFIED`：本轮无 Android 设备，系统权限弹窗、实际到点通知、课程变化后的系统排程与重启恢复转 TASK-039。
+- `CONFIRMED`（2026-09-12 10:57 +08:00，TASK-014）：本地上课提醒默认关闭、15 分钟默认值、5/10/15/30 选项、权限拒绝、精确闹钟降级、调度失败回滚、未来计划与数据变化重排均有自动化覆盖；`flutter analyze` 无问题、`flutter test` 130/130、Android JVM 单测 13/13、Debug APK 构建及权限/receiver/图标静态校验通过；功能提交 `0342855` 已推送。`UNVERIFIED`：本轮无 Android 设备，系统权限弹窗、实际到点通知、课程变化后的系统排程与重启恢复转 TASK-039。
 - `CONFIRMED`（2026-09-11 20:43 +08:00，TASK-038）：用户确认后已将 Git 作者邮箱仅配置在本仓库，不改全局配置；提交 `40c75cd` 的 author/committer 均为新邮箱。提交前扫描确认暂存差异无邮箱明文、会话凭据赋值或构建产物；`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测重跑成功。本地 `HEAD`、`origin/master` 与 Gitee `refs/heads/master` 均为 `40c75cd`。
 - `CONFIRMED`（2026-09-11 20:22 +08:00，TASK-037）：TASK-036 发现的批量修改弹窗溢出已修复；差异明细、课程列表与提示共用最大为视口高度 65% 的单一滚动区，按钮固定。27 条修改、360×800 视口回归测试确认无异常，可滚到最后一条修改和列表底部；`flutter analyze` 无问题、`flutter test` 112/112、Android 原生单测强制重跑成功。文档旧接口名和计数同步修正。
 - `PARTIAL`（2026-09-11 20:14 +08:00，TASK-036）：独立重跑 `flutter analyze`、`flutter test` 111/111、Android 原生单测均通过；但 27 条课程同时发生详情变化时，导入预览在 360×800 视口可复现 `RenderFlex overflowed by 698 pixels`。TASK-035 暂不建议提交，需先给修改明细增加有界滚动并补批量回归测试。详见 `knowledge/review_2026-09-11_task035.md`。
