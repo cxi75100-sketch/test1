@@ -94,14 +94,16 @@ flutter build apk --release --target-platform android-arm,android-arm64
 `CONFIRMED`（2026-09-12）：**v1.0.1 测试版已发布到 Gitee 发行版。**
 
 - 发行版页面：<https://gitee.com/chenxihh/test_c/releases/tag/v1.0.1>（标记为预发布）
-- release id `1140059`，tag `v1.0.1` → 提交 `645b890`
+- release id `1140075`，tag `v1.0.1` → 提交 `cbc0f20`
+
+> **该 tag 与发行版曾重建过一次。** 原因：仓库公开文档中曾写入不应公开的项目归属表述，虽已从工作区移除，但发行版附带的源码压缩包（`v1.0.1.zip` / `.tar.gz`）是 tag 的快照，仍会带上旧文本。处理方式为删除旧发行版 `1140059`、删除并重建 tag 到清理后的提交 `cbc0f20`、重新创建发行版并重传附件。**tag 名称与下载地址保持不变。** 提交历史本身仍保留旧文本（见 `git log -S`），彻底清除需要重写历史，未执行。
 
 | 附件 | 体积 | 下载地址 |
 | --- | --- | --- |
 | `ncpu-timetable-1.0.1-universal.apk` | 40,476,186 B | `https://gitee.com/chenxihh/test_c/releases/download/v1.0.1/ncpu-timetable-1.0.1-universal.apk` |
 | `app-arm64-v8a-release.apk` | 22,184,832 B | `https://gitee.com/chenxihh/test_c/releases/download/v1.0.1/app-arm64-v8a-release.apk` |
 
-`CONFIRMED` 验证方式：用公开接口读回发行版确认两个附件可见；再从下载地址实际下载通用包，得到 40,476,186 B / 耗时 30.5 s，SHA-256 `0b674d3b…f242694` 与本地构建产物**完全一致**。临时下载文件已删除。
+`CONFIRMED` 验证方式：用公开接口读回发行版确认两个附件可见；再从下载地址实际下载通用包，得到 40,476,186 B / 耗时 41.3 s，SHA-256 `0b674d3b…f242694` 与本地构建产物**完全一致**。重建后另行下载 tag 的源码包（`v1.0.1.zip`，686,693 B / 500 个文件）逐文件搜索，确认**不再包含**该表述。临时下载文件已删除。
 
 ### 发布步骤（可复现）
 

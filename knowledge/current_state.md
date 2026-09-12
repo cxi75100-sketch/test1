@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-12 22:53 +08:00
+2026-09-12 23:01 +08:00
 
 ## Project Boundary
 
@@ -69,7 +69,8 @@
 
 ## Validation Snapshot
 
-- `CONFIRMED`（2026-09-12 22:53 +08:00，TASK-050）：v1.0.1 测试版已发布到 Gitee 发行版（release `1140059`，tag `v1.0.1`，预发布）。附件为通用包 `ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B）。公开接口读回确认附件可见；实际下载通用包比对 SHA-256 `0b674d3b…f242694` 与本地产物完全一致。发布用的令牌未写入任何文件，用户在对话中提供，**需自行撤销**。
+- `CONFIRMED`（2026-09-12 23:01 +08:00，TASK-051）：公开文档中的项目归属表述已清理（README + 6 个知识库文档），工作区 0 命中。因该表述已随基线提交推送、且发行版源码压缩包是 tag 快照，已删除旧发行版 `1140059` 并把 tag `v1.0.1` 重建到清理后的提交 `cbc0f20`、重建发行版 `1140075` 重传两个 APK，下载地址不变。重建后源码包（686,693 B / 500 文件）搜索 0 命中；通用包重新下载 SHA-256 `0b674d3b…f242694` 与本地产物一致。**提交历史仍保留旧文本**，彻底清除需重写历史（未执行）。该保密要求已记入本地记忆，不落仓库。
+- `CONFIRMED`（2026-09-12 22:53 +08:00，TASK-050）：v1.0.1 测试版已发布到 Gitee 发行版（初版 release `1140059`，后由 TASK-051 重建为 `1140075`，tag `v1.0.1`，预发布）。附件为通用包 `ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B）。公开接口读回确认附件可见；实际下载通用包比对 SHA-256 与本地产物完全一致。发布用的令牌未写入任何文件，用户在对话中提供，**需自行撤销**。
 - `CONFIRMED`（2026-09-12 22:36 +08:00，TASK-049）：release 包无法联网已修复。根因是 `main/AndroidManifest.xml` 从未声明 `INTERNET`（Flutter 模板只写在 debug/profile 清单，release 不合并），属发布阻断缺陷，影响全部 release 产物含 tag `v1.0.0`。补齐权限后版本升 `1.0.1+2` 重新出包：三个分 ABI APK 经 `aapt2 dump permissions` 确认均含 `INTERNET`，证书仍为正式证书；模拟器覆盖安装 4001→4002 后 `INTERNET: granted=true`，冷启动 1008 ms；端到端进入「设置 → 教务导入 → 继续」后**教务登录页完整渲染**，logcat 无 `ERR_*`；`flutter analyze` 无问题、`flutter test` 132/132。`v1.0.0` 产物作废不得分发。同轮定位 ISSUE-016（学期开学日随时区漂移一天），只记录未修。
 - `CONFIRMED`（2026-09-12 13:02 +08:00，TASK-045）：release 签名与分 ABI 打包完成。`flutter build apk --release --split-per-abi`（172.8 s）产出 arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB（debug fat APK 对照 198 MB）；`apksigner` 确认三个包同一正式证书（SHA-256 `2e8ac142d9c68df3ebc45a77269b8c9d98ad313c4763ab704ba68087a8b58799`）。在 `ncpu_api36` 卸载 debug 签名版本后安装 x86_64 release 包：冷启动 `Status: ok` / 937 ms，`flags=0x0` 非 debuggable，logcat 无致命异常且 App 日志无会话字段，语义树确认今日/整周双栏目与「第 2 周 · 0 门课程」渲染，`TimetableWidgetProvider` 已注册。keystore 在仓库外，`.gitignore` 已兜底。`UNVERIFIED`：arm64-v8a 真机安装（需先卸载、会丢数据，排在 TASK-019/039 之后）；Gitee 发行版附件未上传。
 - `CONFIRMED`（2026-09-12 12:47 +08:00）：TASK-040~044 的改动已从工作区固化为两个提交并推送 —— `704c35b`（feat：今日/整周双栏目与横向周视图）与 `a029a21`（docs：模拟器环境与改版验收）；本地 `HEAD`、`origin/master` 与 Gitee `refs/heads/master` 均为 `a029a21`。推送前在 `R:\` 独立重跑 `flutter analyze` 无问题、`flutter test` 132/132，`pubspec.lock` 无变化；提交前扫描确认差异无凭据或构建产物。附带发现：工作区中已按 TASK-041~044 验收的改动此前从未提交，`.dart_tool/package_config.json` 也停留在新增通知依赖之前（详见 `knowledge/testing.md` Tooling Note）。
