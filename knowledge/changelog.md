@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-13 - Agent（TASK-060 v1.0.2 测试版发布）
+
+Added:
+- 版本号升到 `1.0.2+3`，产出分 ABI 与通用 Release APK，并打 tag `v1.0.2`（annotated `8dacc41` → commit `9772985`）。
+- GitHub 发行版 `v1.0.2`（id `387662208`，预发布）已创建，附件 `ncpu-timetable-1.0.2-universal.apk` 与 `app-arm64-v8a-release.apk`。
+
+Changed:
+- `master` 更新为 `9772985` 并同步到 Gitee 与 GitHub；`knowledge/release.md` 记录本版产物哈希、验证清单与分发状态。
+
+Validation:
+- `CONFIRMED` 三个分 ABI APK 与通用包均含 `INTERNET`，签名仍为正式证书 `2e8ac142…`；通用包 `versionName=1.0.2` / `versionCode=3`。
+- `CONFIRMED` 模拟器卸载 debug 版后安装 x86_64 release 包：冷启动 `Status: ok` / COLD / 1330 ms，无 `DEBUGGABLE`，教务登录页完整渲染，logcat 无致命异常与会话字段；日间/夜间实画均正常。
+- `CONFIRMED` 从 GitHub 下载通用包 40,526,034 B，SHA-256 与本地一致；发行版说明 440 汉字 / 0 U+FFFD。
+- `BLOCKED` Gitee 发行版因本机无 API 令牌未创建；Git 分支与 tag 已两边同步。另记录双推不保证两边都成功，必须逐个读回。
+
 ## 2026-09-13 - Agent（TASK-059 UI/主题交接报告）
 
 Added:

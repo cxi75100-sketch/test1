@@ -46,6 +46,20 @@ flutter build apk --release --split-per-abi
 - 不额外写 Gradle `splits {}`：Flutter CLI 已按 ABI 分包并自动加 `versionCode` 偏移（见 `build.gradle.kts` 内注释），两套机制并存会冲突。
 - **未开启 `minifyEnabled` / `shrinkResources`**：`third_party/flutter_inappwebview_android` 的兼容补丁与 AGP 9 已移除的默认 ProGuard 文件相关（见 DEC-008 / ISSUE-006），开混淆需单独验证，本轮不做。
 
+### v1.0.2 测试版（当前分发版本）
+
+`CONFIRMED`（2026-09-13，`flutter build apk --release --split-per-abi`，耗时 47.6 s）：
+
+| 产物 | 大小 | versionCode | SHA-256 |
+| --- | --- | --- | --- |
+| `app-arm64-v8a-release.apk` | 22,185,532 B（21.2 MB） | 2003 | `55392dc1c229b97aa7afee41958bb31ba6c22663c213adcb754aea6d83c541f5` |
+| `app-armeabi-v7a-release.apk` | 19,660,164 B（18.7 MB） | 1003 | `18de25f6a8502ec57293e3bf9c1497499976394972530f6a5559df6a8b8c95b4` |
+| `app-x86_64-release.apk` | 23,637,264 B（22.5 MB） | 4003 | `04705cdc152e616e59984c2cd05da4117c42dda4660a722f12e4216d8cc0fa51` |
+
+通用包（`--target-platform android-arm,android-arm64`，耗时 39.9 s）：`app-release.apk` 40,526,034 B，`versionName=1.0.2` / `versionCode=3`；分发副本 `ncpu-timetable-1.0.2-universal.apk`，SHA-256 `edf5f4c1ae62fa25b98ea3d16fafb435285a3b2dae4f08da58204c424451b3e8`。
+
+内容差异：本版只含 TASK-054~058 的 Dart/UI 与明暗主题改动（提交 `cbac818`）+ 版本号提交 `9772985`，**未改 Manifest、权限、原生依赖或数据库结构**，因此 v1.0.1 已确认的权限与联网结论继续成立，但仍按下面的必查清单逐项复验（见「验证」）。
+
 ### 面向测试者的通用包（发给别人时用这个）
 
 分 ABI 包要求测试者自己选对架构，容易装错。发给他人测试时改用**同时含 arm64 与 32 位**的单个 APK：
@@ -87,6 +101,20 @@ flutter build apk --release --target-platform android-arm,android-arm64
 - uiautomator 语义树确认界面渲染：「我的课表 / 当前学期 / 新增课程 / 设置」「今日 / 整周」「今天 · 周六」「第 2 周 · 0 门课程」「今日课程 0 门」。
 - `dumpsys appwidget` 确认 `TimetableWidgetProvider` 已注册 —— 该载荷由 Flutter 读库后推送，间接证明 **release 模式下 x86_64 原生 SQLite 正常**。
 
+### v1.0.2 已验证项（AVD `ncpu_api36` / API 36 / x86_64，2026-09-13）
+
+- `aapt2 dump permissions`：arm64-v8a、armeabi-v7a 与通用包均含 `INTERNET`（另有 `RECEIVE_BOOT_COMPLETED` / `SCHEDULE_EXACT_ALARM` / `VIBRATE` / `POST_NOTIFICATIONS`）。
+- `apksigner verify --print-certs`：通用包 Signer DN 与证书 SHA-256 `2e8ac142…b58799`，与 v1.0.1 同一正式证书。
+- 安装：模拟器原有 debug 签名版，`adb uninstall` 后 `adb install app-x86_64-release.apk` 成功（`INSTALL_FAILED_UPDATE_INCOMPATIBLE` 属预期）；`dumpsys package` 显示 `versionName=1.0.2`、`versionCode=4003`、`primaryCpuAbi=x86_64`、**无 `DEBUGGABLE`**。
+- 冷启动：`Status: ok` / `LAUNCH_STATE_COLD` / 1330 ms。
+- 依赖网络的功能实测：设置 → 教务导入 → 确认风险门后 **学校教务登录页完整渲染**（南昌工学院教学综合信息服务平台，含用户名/密码框与「登录」按钮），logcat 无 `ERR_`。这是 ISSUE-015 之后每次出包必须走的一步。
+- 界面渲染：日间首页（今日/整周切换、周次进度、FREE DAY 空状态与三个快捷入口）、设置页（含新增「外观」三档）均以 1080×2400 实画确认；点击「夜间」后整页切换为独立深色配色、状态栏图标变浅，证明主题偏好在本 release 包内可用。
+- logcat：全量无 `FATAL` / `AndroidRuntime` / `MissingPluginException` / `E/flutter`；按 App pid 过滤后 Cookie/Session/Token/password/账号 类字段命中数为 **0**。
+- `dumpsys appwidget`：`TimetableWidgetProvider` 已注册。
+- 收尾：确认后经应用内返回路径离开导入页，主题复原为「跟随系统」，设备侧临时 `ui*.xml` 已删除。
+
+`UNVERIFIED`（v1.0.2 专属）：本次 UIAutomator 语义树为空（`-no-window` 无窗口启动下 Flutter 语义未暴露），故改用 `adb exec-out screencap` 设备帧缓冲 + 坐标点击交叉验证，**这一点与 v1.0.1 用语义树验证的方式不同**；arm64-v8a release 包仍未在 arm64 真机安装；厂商启动器/OLED 下的新视觉未验。
+
 `UNVERIFIED`：arm64-v8a release APK 未在 arm64 真机验证；真机安装需先卸载，会丢本机课表与登录态，故必须排在 TASK-019 / TASK-039 验收之后。
 
 ## 分发
@@ -104,6 +132,20 @@ flutter build apk --release --target-platform android-arm,android-arm64
 | `app-arm64-v8a-release.apk` | 22,184,832 B | `https://gitee.com/chenxihh/test_c/releases/download/v1.0.1/app-arm64-v8a-release.apk` |
 
 `CONFIRMED` 验证方式：用公开接口读回发行版确认两个附件可见；再从下载地址实际下载通用包，得到 40,476,186 B / 耗时 41.3 s，SHA-256 `0b674d3b…f242694` 与本地构建产物**完全一致**。重建后另行下载 tag 的源码包（`v1.0.1.zip`，686,693 B / 500 个文件）逐文件搜索，确认**不再包含**该表述。临时下载文件已删除。
+
+### v1.0.2 测试版分发状态（2026-09-13）
+
+| 平台 | 状态 | 详情 |
+| --- | --- | --- |
+| Git 分支与 tag | `CONFIRMED` 两边一致 | `master` = `9772985`；tag `v1.0.2`（annotated `8dacc41` → commit `9772985`）在 Gitee 与 GitHub 读回一致 |
+| GitHub 发行版 | `CONFIRMED` 已发布 | id `387662208`，tag `v1.0.2`，预发布；附件 `ncpu-timetable-1.0.2-universal.apk`（40,526,034 B）与 `app-arm64-v8a-release.apk`（22,185,532 B） |
+| Gitee 发行版 | `BLOCKED` 待建 | 缺 Gitee API 令牌；仓库内没有可用的 `access_token`（见下） |
+
+`CONFIRMED`（GitHub 验证，2026-09-13）：发行版说明读回 440 个汉字、0 个 U+FFFD，与本地说明文件逐字一致；从发行版下载通用包得到 40,526,034 B / 4.1 s，SHA-256 `edf5f4c1…451b3e8` 与本地构建产物完全一致。
+
+`BLOCKED`（Gitee，2026-09-13）：`POST /repos/chenxihh/test_c/releases` 返回 `HTTP 401 {"message":"401 Unauthorized: Access token does not exist"}`。原因不是配置错误，而是**本机没有存 Gitee API 令牌**：Windows 凭据管理器里 `gitee.com` 的密码是 10 位账号口令，只够 `git push` 认证，用它调 `/api/v5/user` 同样返回 `Access token does not exist`；v1.0.1 发布用的令牌按当时约定未落盘。需要用户提供新令牌（权限勾 `projects`）后才能补建 Gitee 发行版并上传同一组 APK。**Git 仓库与 tag 已经同步，缺的只有 Gitee 网页上那一条发行版记录与附件。**
+
+> ⚠️ `git push origin master` 的双推**不保证两边都成功**。本轮第一次双推更新了 Gitee，GitHub 仍停在旧提交且命令未报错；补推 `git push github master` 才一致。**每次双推后必须分别 `git ls-remote origin/github refs/heads/master` 读回两边的哈希**，不要只看命令是否返回 0。
 
 ### 发布步骤（可复现）
 
@@ -199,6 +241,7 @@ git config --local http.https://github.com.proxy http://127.0.0.1:7897
   - `copilot/test-branch` = `099f69ce5819efb7a30f89ed6dad4a9c26a08d5e`（README.md 28 B）
 - tag `v1.0.0` / `v1.0.1` 已推送。
 - 发行版 `v1.0.1`（id `387624284`，预发布）已创建，附件与 Gitee 相同：`ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B），说明文本与 Gitee 一致。
+- 发行版 `v1.0.2`（id `387662208`，预发布）已创建：`ncpu-timetable-1.0.2-universal.apk`（40,526,034 B）与 `app-arm64-v8a-release.apk`（22,185,532 B）。下载地址 `https://github.com/cxi75100-sketch/test1/releases/download/v1.0.2/<文件名>`；说明文本与本地文件逐字一致，下载哈希已验证。Gitee 侧对应发行版尚未建立（`BLOCKED` 于令牌），因此**当前两个仓库的发行版集合不一致**，只有 Git 分支与 tag 一致。
 
 ### GitHub API 要点
 

@@ -29,6 +29,10 @@
 
 ## Passed
 
+- `flutter analyze`（2026-09-13 02:00 +08:00，TASK-059/060）：No issues found。
+- `flutter test`（2026-09-13 02:00 +08:00，TASK-059/060）：135 tests passed。
+- `flutter build apk --release --split-per-abi` + `--target-platform android-arm,android-arm64`（2026-09-13，TASK-060，47.6 s / 39.9 s）：三个分 ABI 包与通用包均含 `INTERNET`，同一个正式证书 `2e8ac142…`；通用包 `versionName=1.0.2` / `versionCode=3`。在 `ncpu_api36` 卸载 debug 签名版后安装 x86_64 release 包：冷启动 `Status: ok` / COLD / 1330 ms，无 `DEBUGGABLE`，`dumpsys appwidget` 有 `TimetableWidgetProvider`；实测教务导入风险门通过后**学校登录页完整渲染**（无 `ERR_`），日间首页/设置与手动夜间实画正常，logcat 无 `FATAL`/`AndroidRuntime`/`MissingPluginException`/`E/flutter`，按 App pid 过滤会话类字段命中 0。**注意**：本轮模拟器以 `-no-window` 启动，UIAutomator 语义树为空，改用 `adb exec-out screencap` 帧缓冲 + 坐标点击取证；这是验证方式的差异，不是产品缺陷。
+- GitHub 发行版下载校验（2026-09-13，TASK-060）：通用包 40,526,034 B / 4.1 s，SHA-256 `edf5f4c1…451b3e8` 与本地一致；说明 440 汉字 / 0 U+FFFD。
 - `flutter analyze`（2026-09-13 01:46 +08:00，TASK-058）：No issues found。
 - `flutter test`（2026-09-13 01:43 +08:00，TASK-058）：135 tests passed；新增主题默认值、非法值回退、三档入口与持久化回归。
 - `flutter build apk --debug`（2026-09-13，TASK-058）：成功并覆盖安装到 `ncpu_api36`。1080×2400 实画确认日间、手动夜间与跟随系统切换；`cmd uimode night yes/no` 下 App 实时响应且三档选择语义正确，系统状态栏/导航栏图标对比正常。logcat 未见本轮 App 致命异常或布局溢出；模拟器保持运行。
