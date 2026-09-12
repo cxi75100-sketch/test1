@@ -1,5 +1,69 @@
 # Changelog
 
+## 2026-09-12 - Agent（TASK-044 满课一屏显示）
+
+Changed:
+- 移除每个上午、下午/晚间半区内部的纵向 `ListView`；上午固定按 1-2 / 3-4 节分两格，下半固定按 5-6 / 7-8 / 9-10 节分三格，课程按开始节次落位，满课无需上下翻动。
+- 窄列课程卡改为紧凑三层信息：课程名、节次与统一作息时间、教室与教师；极矮视口使用缩放兜底，避免布局溢出。
+- 将“新增课程”从右下悬浮按钮移至顶部操作区，末节课程不再被按钮遮挡；同时收回周视图底部的冗余留白。
+
+Validation:
+- `CONFIRMED` 先用上午 2 门、下午/晚间 3 门的 Widget 测试复现旧实现无法找到晚课；实现后确认五门课均渲染、两半等高且内部无 `Scrollable`。
+- `CONFIRMED` `flutter analyze` 无问题，`flutter test` 132/132，Debug APK 构建成功并在 `ncpu_api36` 覆盖安装、启动；真实 Android 画面确认满课五张卡一屏可见，节次落位正确且无按钮遮挡，logcat 无 App 致命异常或布局溢出。
+- 未修改课程数据；模拟器保留在整周页面供用户直接查看。
+
+## 2026-09-12 - Agent（TASK-043 横向列式周课表）
+
+Changed:
+- 整周课表从纵向星期日程重做为横向七列周视图：一天一列，手机首屏约展示两列半，左右滑动查看完整一周。
+- 每列上、下两半严格等高：上午承载 1-4 节，“下午 / 晚间”承载 5-10 节，保证第 9-10 节晚课不会丢失。
+- 移除与列头重复的七天日期条，新增横滑提示、当天边框强调、每日课程计数和无课状态；窄列课程卡仍显示课程名、节次、统一作息时间、教室、教师，并可进入详情。
+
+Validation:
+- `CONFIRMED` 先将 Widget 回归改为目标结构并复现旧实现失败；完成后 `flutter analyze` 无问题、`flutter test` 132/132。
+- `CONFIRMED` Debug APK 构建成功，在 `ncpu_api36` 覆盖安装和冷启动成功（2474 ms）；真实 Android 画面确认首屏列宽、上下等分、横向滑动及卡片密度正常，logcat 无 App 致命异常或布局溢出。
+- 未修改课程数据；Computer Use 临时截图已清理。
+
+## 2026-09-12 - Agent（TASK-042 整周上下午时段层级）
+
+Changed:
+- 整周课表在原有星期分组内部新增上午、下午、晚上三段，分别对应官方作息的 1-4 节、5-8 节、9 节以后；跨时段课程按开始节次唯一归类，不重复课程。
+- 每个时段使用不同的图标、强调色、节次范围、分隔线与段间留白，让星期、时段、课程卡形成三级视觉层级；今日专栏和课程数据逻辑不变。
+
+Validation:
+- `CONFIRMED` 先新增 Widget 测试并复现缺少时段层级，完成实现后 `flutter analyze` 无问题、`flutter test` 132/132。
+- `CONFIRMED` Debug APK 构建成功，在 `ncpu_api36` 覆盖安装和冷启动成功（2793 ms）；语义树确认上午/下午时段标题与对应内容已渲染，logcat 无 App 致命异常。
+- 临时 UI dump 已清理，未修改模拟器或真机课程数据。
+
+## 2026-09-12 - Agent（TASK-041 今日 / 整周双栏目）
+
+Changed:
+- 课表首页从单一整周纵向日程拆为“今日 / 整周”两个明确栏目，默认进入今日；今日仅显示设备当天课程并按节次排序，整周继续提供周切换、七天日期条与按日分组。
+- 切回今日时复用 `SelectedWeek.goToCurrent()` 回到当前教学周；课程卡、详情、新增课程、学期过期提示和数据库查询接口保持不变。
+- 今日专栏新增日期主卡、当日课程计数和独立空状态；栏目按钮包含选中语义，方便可访问性工具区分当前视图。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` 131/131。
+- `CONFIRMED` 412×915 匿名虚构课程渲染预览中，栏目切换、日期主卡、三张课程卡与浮动按钮无互相遮挡；临时预览与测试文件已清理。
+- `CONFIRMED` Debug APK 构建成功，在 `ncpu_api36` 覆盖安装与冷启动成功（2739 ms）；真实 Android 字体画面确认今日空状态无遮挡，语义树确认双栏目选中态和整周内容，logcat 无 App 致命异常；临时截图/UI dump 已清理。
+- `UNVERIFIED` 厂商真机手势体验留待下次设备验收。
+
+## 2026-09-12 - Agent（TASK-040 Android 模拟器验证环境）
+
+Added:
+- 新增 Android 模拟器验证环境：安装 `emulator` 37.1.11.0 与 `system-images;android-36;google_apis;x86_64`，创建 AVD `ncpu_api36`（pixel_7 / API 36 / x86_64 / 2 GB RAM），并把时区校正为 `Asia/Shanghai`。
+- 目的：让「必须造数据、改时钟、重启」的验收（TASK-019 小组件溢出/跨天重算、TASK-039 通知实际到点/重排/重启恢复）在模拟器上完成，避免再次向真机生产数据库注入数据。
+
+Validation:
+- `CONFIRMED` 硬件加速可用：`emulator -accel-check` → `WHPX(10.0.26200) is installed and usable`（退出码 0）；启动日志 `Windows Hypervisor Platform accelerator is operational`；GPU 为 NVIDIA RTX 5060 Laptop GPU（Vulkan）。**无需管理员启用 Windows 功能、无需重启。**
+- `CONFIRMED` 设备与开机：`emulator-5554` / `sdk_gphone64_x86_64` / API 36 / x86_64，`sys.boot_completed=1`。
+- `CONFIRMED` 项目链路：Debug APK 流式安装成功；冷启动 `Status: ok` / COLD / 3696 ms；logcat 无 `FATAL` / `AndroidRuntime` / `MissingPluginException` / `E/flutter`。
+- `CONFIRMED` x86_64 原生依赖可用：`app_flutter/ncpu_timetable.sqlite` 建库成功；小组件载荷 `schemaVersion=1 / firstWeekMonday=2026-08-31 / totalWeeks=20` 写入成功且 `TimetableWidgetProvider` 已注册；语义树显示「第 2 周 / 共 20 周 · 本周 0 条安排 / 9-7–9/13」。
+- `CONFIRMED` 启动器为 `com.google.android.apps.nexuslauncher`（Launcher3，支持小组件）。
+- `CORRECTED` 上一轮依据 `Win32_OptionalFeature` 的 `HypervisorPlatform InstallState=2` 推断 WHPX 被禁用，并据此判断需要管理员启用 Windows 功能 + 重启；该推断**错误**。可靠依据只有模拟器自带的 `-accel-check`，此经验已记入 `knowledge/testing.md` 的 Tooling Note。
+- 限制：模拟器**不替代**厂商启动器（OriginOS / ColorOS）下的 RemoteViews 排版、厂商省电策略下的后台与通知行为、arm64 原生库路径。
+- 未操作真机、未修改业务源码、未改动 Git 提交。
+
 ## 2026-09-12 - Agent（TASK-014 Android 本地上课提醒）
 
 Added:

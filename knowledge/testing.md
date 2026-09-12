@@ -19,7 +19,7 @@
 - Widget 日程计算（JVM / JUnit）：`gradlew :app:testDebugUnitTest`，EpochDay/ISO 星期、开学前、第 1 周、第 2 周周三、第 20 周周日、学期结束后、总周数非法、周次与星期过滤排序、时间来源优先级（13 个测试）。
 - ImportDiff：首次导入全为新增、内容相同（含不同对象/不同数组实例）无差异、单侧增删、手动课程双侧都不参与、同 id 详情变化（名称/教师/教室/备注、星期/节次/周次/起止时间）进入 `changed` 并保留新旧课程、未变化不进入任何列表（12 个测试）。
 - ImportSessionCleaner：平台实现未注册时静默降级、不抛异常（1 个测试）。
-- Timetable page：学期已结束/开学日在未来时显示提示条，学期日期在范围内时不显示（3 个测试，按运行日期推算学期避免时间依赖）。
+- Timetable page：学期已结束/开学日在未来时显示提示条，学期日期在范围内时不显示；默认进入“今日”且只显示当天课程，切换“整周”后显示本周其他日期课程；整周一天一列、上午与“下午 / 晚间”两半等高，满课 2+3 张课程卡均渲染且两半内部没有 `Scrollable`，第 9-10 节保留在下半区，并可横向滑动到周日（5 个测试，按运行日期推算学期避免时间依赖）。
 - Notification preferences/database：默认关闭、默认提前 15 分钟、非法持久化值回退、设置表读写与监听（3 个测试）。
 - Notification planner：周次/星期日期、教学楼特殊作息、过去课程过滤、确定性 ID 与 480 条上限（4 个测试）。
 - Notification coordinator/settings：权限拒绝、精确闹钟降级、开启/关闭、提前量变化重排、排程失败回滚，以及设置页默认态/开关/下拉选择（10 个测试）。
@@ -29,6 +29,18 @@
 ## Passed
 
 - `flutter analyze`（在 `R:\` 下）：No issues found。
+- `flutter analyze`（2026-09-12 12:35 +08:00，TASK-044）：No issues found。
+- `flutter test`（2026-09-12 12:35 +08:00，TASK-044）：132 tests passed；新增同一天上午 2 门、下午/晚间 3 门的满课回归，确认五门课全部渲染且半区内无纵向滚动。
+- `flutter build apk --debug`（2026-09-12 12:36 +08:00，TASK-044）：成功；在 `ncpu_api36` 覆盖安装与启动成功，真实 Android 画面确认满课五张卡一屏可见、按节次格定位且无悬浮按钮遮挡；logcat 无 App 致命异常或 `RenderFlex overflowed`。
+- `flutter analyze`（2026-09-12 12:20 +08:00，TASK-043）：No issues found。
+- `flutter test`（2026-09-12 12:20 +08:00，TASK-043）：132 tests passed；横向七列、上下等高、晚课保留、周日可横滑到达，以及课程卡完整元数据均有回归覆盖。
+- `flutter build apk --debug`（2026-09-12 12:21 +08:00，TASK-043）：成功；在 `ncpu_api36` 覆盖安装成功，冷启动 `Status: ok` / COLD / 2474 ms；真实 Android 画面与横向拖动检查通过，logcat 无 App 致命异常或 `RenderFlex overflowed`。
+- `flutter analyze`（2026-09-12 11:44 +08:00，TASK-042）：No issues found。
+- `flutter test`（2026-09-12 11:44 +08:00，TASK-042）：132 tests passed；新增整周上午/下午/晚上三时段渲染回归。
+- `flutter build apk --debug`（2026-09-12 11:44 +08:00，TASK-042）：成功；在 `ncpu_api36` 覆盖安装成功，冷启动 `Status: ok` / COLD / 2793 ms，语义树确认时段层级存在，logcat 无 App 致命异常；临时 UI dump 已清理。
+- `flutter analyze`（2026-09-12 11:26 +08:00，TASK-041）：No issues found。
+- `flutter test`（2026-09-12 11:26 +08:00，TASK-041）：131 tests passed；新增“今日 / 整周”栏目隔离与当天课程过滤回归，并调整增课、周末课程流程覆盖整周入口。
+- `flutter build apk --debug`（2026-09-12 11:27 +08:00，TASK-041）：成功；在 `ncpu_api36` 覆盖安装成功，冷启动 `Status: ok` / COLD / 2739 ms。UI 语义树确认“今日”默认选中、“整周”切换后选中且周概览/日期条/课程列表存在；logcat 无 `FATAL EXCEPTION`、`MissingPluginException` 或 `E/flutter`。临时截图与 UI dump 已清理。
 - `flutter test`（2026-09-12 10:56 +08:00，TASK-014）：130 tests passed；新增本地通知偏好、计划、协调器、设置 UI 与 provider 同步测试。
 - `gradlew :app:testDebugUnitTest --rerun-tasks`（2026-09-12，TASK-014）：13 tests / 0 failures / 0 errors / 0 skipped。
 - `flutter build apk --debug`（2026-09-12，TASK-014）：成功；通知权限、调度 receiver 与小图标已在 APK 静态读回。
@@ -115,7 +127,14 @@
   - `CONFIRMED`：按 DEC-010 保留的登录态确实保留 —— `app_webview/Default/Cookies` 24 KB、`Local Storage/leveldb` 均在。
   - 注意：`app_webview/` 在 WebView 首次初始化时会自行由 4318 KB 降到 234 KB，与本次改动无关；观测清缓存要看 `cache/WebView/Default/HTTP Cache`，不是 `app_webview/`。
   - 未覆盖：导入预览「新增/移除」差异行的真机显示（需真实导入，见 TASK-021）。
-- Android 模拟器：未安装，如需可用需追加 `sdkmanager "emulator" "system-images;android-36;google_apis;x86_64"`。
+- Android 模拟器（2026-09-12，TASK-040）：`CONFIRMED`。已安装 `emulator` 37.1.11.0 与 `system-images;android-36;google_apis;x86_64`，AVD `ncpu_api36`（pixel_7 / API 36 / google_apis / x86_64 / 2 GB RAM / `hw.keyboard=yes`），位于 `C:\Users\ninan\.android\avd\ncpu_api36.avd`。
+  - `CONFIRMED` 硬件加速可用：`emulator -accel-check` → `WHPX(10.0.26200) is installed and usable`（退出码 0）；启动日志 `Windows Hypervisor Platform accelerator is operational`；渲染 GPU 为 NVIDIA RTX 5060 Laptop GPU（Vulkan）。`HypervisorPresent=True` 且 VBS/HVCI 运行**并不妨碍** WHPX，无需管理员改 Windows 功能、无需重启。
+  - `CONFIRMED` 开机与设备属性：`adb devices -l` 显示 `emulator-5554 device product:sdk_gphone64_x86_64`；`sys.boot_completed=1`；`ro.build.version.sdk=36`、`release=16`、`ro.product.cpu.abi=x86_64`。
+  - `CONFIRMED` 项目运行链路：Debug APK（207,582,794 B，2026-09-12 11:01 构建）经 `adb install -r -t` 流式安装成功；`am start -W` 冷启动 `Status: ok` / `LaunchState: COLD` / TotalTime 3696 ms，进程存活；logcat 扫描无 `FATAL`、`AndroidRuntime`、`MissingPluginException`、`E/flutter`。
+  - `CONFIRMED` **x86_64 原生依赖可用**：冷启动后 `app_flutter/ncpu_timetable.sqlite` 已创建（32768 B），证明 Drift 的 SQLite 原生库在 x86_64 上正常工作；`shared_prefs/ncpu_timetable_widget.xml` 载荷为 `schemaVersion=1`、`firstWeekMonday=2026-08-31`、`totalWeeks=20` 与 10 条节次时间（首条 08:20-09:00），`dumpsys appwidget` 已登记 `TimetableWidgetProvider`；`notification_plugin_cache.xml` 存在。
+  - `CONFIRMED` UI 语义树（`uiautomator dump`，不截屏）：显示「第 2 周」「共 20 周 · 本周 0 条安排」「本周暂无课程」「新增课程」「设置」与 9/7–9/13 日期条，与真机口径一致。
+  - 启动器为 `com.google.android.apps.nexuslauncher`（Launcher3，**支持小组件**），故小组件的添加/缩放/溢出分支可在此验证；时区已校正为 `Asia/Shanghai`。
+  - **边界**：厂商启动器（OriginOS / ColorOS）下的 RemoteViews 尺寸与字号、厂商省电策略下的后台与通知行为、arm64 原生库路径**仍只能在真机验证**。
 - WebView / 教务导入：`CONFIRMED`。用户已在真机通过 Debug 采集工具登录并取得脱敏接口形状；2026-09-11 又在真机完成「登录 → 预览 27 条 → 确认写入 → 重启持久化」的完整端到端验收（TASK-021），替换等价且手动课程经 rowid 位移反证保留。
 - 桌面小组件：`PARTIAL`。真机已确认启动器添加、表头与当天课程渲染、点击打开 App（ISSUE-013 修复后复验）；尚未验证数据变更后的即时刷新、缩放、「还有 N 门课」溢出与跨天重算（TASK-019 剩余项）。
 - 本地上课提醒：`PARTIAL`。纯逻辑、数据库、设置交互、provider 重排、Android 构建与清单静态校验已确认；设备权限弹窗、精确/非精确实际行为、到点通知和重启恢复尚未真机验证（TASK-039）。
@@ -148,3 +167,7 @@
 - 本轮工具链占用：`D:\Tools\android-sdk` ≈ 2.6 GB（含自动补装的 platforms;android-35 与 cmake;3.22.1），`D:\Tools\jdk-17` ≈ 304 MB。
 - flutter_inappwebview Android 子包 1.1.3 已通过项目内 path override 固化；全局 Pub Cache 无需修改，详见 ISSUE-006 / DEC-008。
 - `gradlew :app:testDebugUnitTest` 可直接在 `android/` 下运行（本轮未触发 Dart 构建，约 2 分钟）：小组件等纯 Kotlin 逻辑因此能在无设备环境完成验证；测试结果在 `build/app/test-results/testDebugUnitTest/`。
+- **判断模拟器硬件加速不要看 `Win32_OptionalFeature`**（2026-09-12 踩到）：`HypervisorPlatform` 的 `InstallState=2` 曾被误读为 Disabled，据此差点要求管理员启用 Windows 功能并重启；实际 `emulator -accel-check` 与 `emulator-check accel` 均返回 `WHPX ... is installed and usable`（退出码 0），模拟器正常运行。**唯一可靠依据是模拟器自带的 `-accel-check`，不是 CIM/注册表属性。**
+- Git Bash 调 `adb shell` 带绝对设备路径（`/sdcard/w.xml`、`/data/data/<pkg>/...`）时必须加 `MSYS_NO_PATHCONV=1`，否则会被改写成 `C:/Program Files/Git/...` 而静默失败（`run-as ls` 与 `uiautomator dump` 后 `cat` 均踩到）。
+- `avdmanager --sdk_root=` 必须放在动作之后（`create avd ... --sdk_root=...`），放最前报 `not a valid global flag`；更稳的是设 `ANDROID_SDK_ROOT` / `ANDROID_HOME` 环境变量（用正斜杠路径）。
+- 模拟器占用：`emulator` 1034 MB + `system-images` 4374 MB（约 5.4 GB），AVD 默认落在 `C:\Users\<user>\.android\avd\`。启动前建议 `gradlew --stop` 释放闲置 daemon（实测可用内存 3.1 GB → 5.5 GB）。

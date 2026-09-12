@@ -62,7 +62,7 @@ Resolution: TASK-016 基础真机验收完成。教务重新导入、小组件�
 
 Possible Solution:
 - 首选：用户接入 Android 真机（USB + 开发者模式 + adb 授权），复跑 `flutter devices` 后执行 `flutter run --debug`。
-- 备选：明确授权后追加 `sdkmanager "emulator" "system-images;android-36;google_apis;x86_64"`（约 1.5–2 GB），创建 AVD 并确认 CPU 虚拟化（Intel HAXM / Windows Hypervisor Platform / AMD AEHD）可用；此路径需用户确认，本轮未擅自启动。
+- 备选（2026-09-12 已执行完成，TASK-040）：已追加 `emulator` 37.1.11.0 与 `system-images;android-36;google_apis;x86_64`（实际占用约 5.4 GB），创建 AVD `ncpu_api36` 并确认 WHPX 硬件加速可用（`emulator -accel-check` 退出码 0），项目 APK 已在该模拟器冷启动通过。详见 `knowledge/testing.md` 的模拟器条目。
 
 ## ISSUE-005 sdkmanager 通过 Git Bash 传 Windows 路径反斜杠被吃
 

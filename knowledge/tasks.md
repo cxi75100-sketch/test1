@@ -3,7 +3,6 @@
 ## Now
 
 - 无。
-
 ## Next
 
 - [ ] TASK-039 Android 真机验收本地上课提醒：通知权限、精确闹钟权限/降级、实际到点通知、课程变化重排与重启恢复；步骤见 `knowledge/notifications.md`。
@@ -15,6 +14,17 @@
   跨天重算未验（建议改学期开学周一而非改系统日期）。缩放无独立真机记录，按未验证处理。验收步骤见 `knowledge/home_widget.md`。
 
 ## Done
+
+- [x] TASK-044 移除整周课表日列内部的上下滚动（2026-09-12 完成）：上午固定为 1-2 / 3-4 节两格，下午/晚间固定为 5-6 / 7-8 / 9-10 节三格，满课五张卡一屏完整可见；课程卡压缩为课程名、节次/时间、教室/教师三层，新增入口移至顶部避免遮挡末节课程。新增满课 Widget 回归确认两半等高、五门课均渲染且半区内无 `Scrollable`；`flutter analyze` 无问题，`flutter test` 132/132，Debug APK 构建、API 36 模拟器覆盖安装与真实画面验收通过，logcat 无致命异常或布局溢出。未修改课程数据。
+- [x] TASK-043 将整周课表重做为横向周视图（2026-09-12 完成）：一天一列，每列上半为上午 1-4 节、下半为“下午 / 晚间”5-10 节且严格等高，横向滑动查看七天；移除重复日期条，新增滑动提示、当天强调、每日课程计数与窄列课程卡，保留课程名、节次、时间、教室、教师和详情入口。`flutter analyze` 无问题，`flutter test` 132/132；Debug APK 构建、API 36 模拟器覆盖安装、冷启动和横滑视觉验收通过，logcat 无致命异常或布局溢出。未修改课程数据。
+- [x] TASK-042 强化整周课表的时段层级（2026-09-12 完成）：每天继续按星期分组，并依据官方节次再分为上午（1-4）、下午（5-8）、晚上（9+）；各时段增加差异化图标、颜色、节次范围、分隔线和留白，跨时段课程按开始节次唯一归类。`flutter analyze` 无问题，`flutter test` 132/132；Debug APK 构建、API 36 模拟器覆盖安装与冷启动成功，语义树确认时段标题与内容层级存在，logcat 无 App 致命异常。未修改课程数据。
+- [x] TASK-041 将课表首页拆分为「今日」与「整周」两个独立栏目（2026-09-12 完成）：首页默认进入独立“今日”专栏，只显示设备当天课程并按节次排序；“整周”栏目保留周切换、七天日期条和按日分组，切回“今日”会回到当前教学周。新增 412×915 匿名数据视觉检查与窄屏 Widget 回归，确认栏目隔离、当天过滤及旧增课/周末课程流程；`flutter analyze` 无问题，`flutter test` 131/131，Debug APK 构建、模拟器覆盖安装、冷启动及双栏目语义验收通过。未操作真机数据，厂商真机手势体验待下次安装验收。
+- [x] TASK-040 搭建 Android 模拟器环境（2026-09-12 完成）：安装 `emulator` 37.1.11.0 与 `system-images;android-36;google_apis;x86_64`，创建 AVD `ncpu_api36`（pixel_7 / API 36 / google_apis / x86_64 / 2 GB RAM / `hw.keyboard=yes`）。
+  - `CONFIRMED` **无需管理员启用 Windows 功能、无需重启**：`emulator -accel-check` 返回 `WHPX(10.0.26200) is installed and usable`（退出码 0），模拟器日志确认 `Windows Hypervisor Platform accelerator is operational`；GPU 走 NVIDIA RTX 5060 Laptop GPU（Vulkan）。此前据 `Win32_OptionalFeature` InstallState 推断 WHPX 被禁用是**错误**的，该属性不可作为加速可用性依据。
+  - `CONFIRMED` 项目链路在该模拟器可用：Debug APK 流式安装成功；冷启动 `Status: ok` / `LAUNCH_STATE_COLD` / 3.7 s，pid 存活；logcat 无 `FATAL`、`AndroidRuntime`、`MissingPluginException`、`E/flutter`；`app_flutter/ncpu_timetable.sqlite` 建库成功（**x86_64 原生 SQLite 可用**）；小组件载荷 `schemaVersion=1 / firstWeekMonday=2026-08-31 / totalWeeks=20` 已写入且 `TimetableWidgetProvider` 已在 `dumpsys appwidget` 注册；语义树显示「第 2 周 / 共 20 周 · 本周 0 条安排 / 9-7–9/13」。
+  - 启动器为 `com.google.android.apps.nexuslauncher`（Launcher3，支持小组件）；时区已校正为 `Asia/Shanghai`；磁盘占用 `emulator` 1034 MB + `system-images` 4374 MB。
+  - **不替代**：厂商启动器（OriginOS / ColorOS）下的 RemoteViews 排版、厂商省电策略下的后台与通知行为、arm64 原生库路径。
+  - 内存前置：搭建前 `gradlew --stop` 释放闲置 daemon，可用内存 3.1 GB → 5.5 GB。
 
 - [x] TASK-014 实现 Android V1 本地上课提醒（2026-09-12 完成）：默认关闭，用户主动开启时申请通知权限；默认提前 15 分钟，可选 5/10/15/30 分钟。按当前学期、课程周次/星期和统一作息生成未来提醒，课程、学期、作息、偏好变化及 App 回前台时重建；精确闹钟未授权时降级为非精确提醒；调度失败会回滚开启状态。`flutter analyze` 无问题、`flutter test` 130/130、Android JVM 单测 13/13、Debug APK 构建与通知权限/receiver/图标静态校验通过。真机行为转 TASK-039。
 
