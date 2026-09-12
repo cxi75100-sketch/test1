@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-13 02:35 +08:00
+2026-09-13 03:05 +08:00
 
 ## Project Boundary
 
@@ -12,7 +12,7 @@
 
 ## Current Milestone
 
-里程碑 1（本地课表）、里程碑 2（教务导入主链路）均已完成真机端到端验收 —— 用户本人登录导入并确认写入，替换等价且手动课程保留。里程碑 3（Android 桌面小组件）已真机确认：可在启动器找到并添加、表头与当天课程渲染正确、点击可打开 App。Android 本地上课提醒代码已完成并通过自动化、原生构建与 APK 静态校验，尚待真机验证权限、实际到点、重排和重启恢复。Android 模拟器验证环境（AVD `ncpu_api36`）已搭建并通过实测。里程碑 4 的签名、Release 打包与 v1.0.1 测试版分发链路已打通；用户安装 Release 版后未再发现 Debug 版的明显卡顿。当前优先收口 TASK-055 UI 细节：整周卡与详情页的渐变语言已统一；用户不认可的纸张网格已由 TASK-058 彻底撤回，现已加入独立设计的日间、夜间与跟随系统模式。TASK-054~058 的改动已提交（`cbac818`）并出包发布为 `v1.0.2` 测试版：GitHub 发行版已建，Gitee 发行版待用户提供 API 令牌后补建。多校接入（TASK-047）顺延到视觉细节收口后。
+里程碑 1（本地课表）、里程碑 2（教务导入主链路）均已完成真机端到端验收 —— 用户本人登录导入并确认写入，替换等价且手动课程保留。里程碑 3（Android 桌面小组件）已真机确认：可在启动器找到并添加、表头与当天课程渲染正确、点击可打开 App。Android 本地上课提醒代码已完成并通过自动化、原生构建与 APK 静态校验，尚待真机验证权限、实际到点、重排和重启恢复。Android 模拟器验证环境（AVD `ncpu_api36`）已搭建并通过实测。里程碑 4 的签名、Release 打包与 v1.0.1 测试版分发链路已打通；用户安装 Release 版后未再发现 Debug 版的明显卡顿。当前优先收口 TASK-055 UI 细节：整周卡与详情页的渐变语言已统一；用户不认可的纸张网格已由 TASK-058 彻底撤回，现已加入独立设计的日间、夜间与跟随系统模式。TASK-054~058 的改动已提交（`cbac818`）并出包发布为 `v1.0.2` 测试版，两个仓库的发行版都已建好；TASK-055 的视觉是否达到用户期望仍未关闭。多校接入（TASK-047）顺延到视觉细节收口后。
 
 ## Working Features
 
@@ -40,8 +40,7 @@
 
 ## In Progress
 
-- TASK-060 v1.0.2 测试版发布：构建、tag、双仓 Git 同步与 GitHub 发行版均已完成；**只剩 Gitee 发行版与附件**，因本机没有 Gitee API 令牌而 `BLOCKED`，待用户提供令牌后补建。
-- TASK-055 UI 视觉细节继续由用户验收；代码与模拟器技术基线已完成。
+- TASK-055 UI 视觉细节继续由用户验收；代码与模拟器技术基线已完成，`v1.0.2` 测试版已出包分发。
 
 ## Not Started
 
@@ -67,13 +66,13 @@
 - 当前学期开学第一周周一为 `2026-08-31`（用户确认，且与教学周历一致）；`2026-09-10` 起属于第 2 周。该值已固化为代码默认常量，两台真机的生产库和小组件载荷均已同步为该日期。
 - 两台真机：vivo V1981A（Android 12 / API 31，2026-09-10 完成覆盖安装与冷启动验收）与 OnePlus PLC110（Android 16 / API 36 / arm64-v8a，2026-09-11 完成全新安装）。
 - Android 模拟器：AVD `ncpu_api36`（pixel_7 / API 36 / google_apis / x86_64 / 2 GB RAM），`emulator` 37.1.11.0，硬件加速走 WHPX（`emulator -accel-check` 退出码 0），启动器为 Launcher3（支持小组件）。用途是替代真机做**可造数据、可改时钟、可重启**的验证；**不替代**厂商启动器下的 RemoteViews 排版、厂商省电策略下的后台/通知行为与 arm64 原生库路径。
-- `CONFIRMED`：Git 基线与双远端。`origin` = `https://gitee.com/chenxihh/test_c.git`（公开），fetch 走 Gitee，**push 配了 Gitee + GitHub 两个地址**；另有一个远端 `github` = `https://github.com/cxi75100-sketch/test1`（公开，默认分支 `master`）。`git push origin master --tags` 一次同步两边。**GitHub 直连会超时，已配置仓库级 `http.https://github.com.proxy` 指向 Clash `127.0.0.1:7897`（仅对 github.com 生效，Gitee 仍直连）——Clash 未开时 GitHub 推送失败、Gitee 不受影响。** 当前 `master` = `9772985`，tag `v1.0.2` 亦已两边推送；`v1.0.1` 两个仓储的发行版均含同一组 APK。**但双推不等于两边都更新**：本轮 `git push origin master` 只更新了 Gitee，GitHub 静默停在旧提交，补推 `git push github master` 才一致 —— 每次推送后必须分别 `git ls-remote origin/github refs/heads/master` 读回比对。`v1.0.2` 发行版目前只有 GitHub 有（id `387662208`），Gitee 侧 `BLOCKED` 于令牌。详见 `knowledge/release.md`。
+- `CONFIRMED`：Git 基线与双远端。`origin` = `https://gitee.com/chenxihh/test_c.git`（公开），fetch 走 Gitee，**push 配了 Gitee + GitHub 两个地址**；另有一个远端 `github` = `https://github.com/cxi75100-sketch/test1`（公开，默认分支 `master`）。`git push origin master --tags` 一次同步两边。**GitHub 直连会超时，已配置仓库级 `http.https://github.com.proxy` 指向 Clash `127.0.0.1:7897`（仅对 github.com 生效，Gitee 仍直连）——Clash 未开时 GitHub 推送失败、Gitee 不受影响。** 当前 `master` = `9265922`，tag `v1.0.2` 亦已两边推送；`v1.0.1` 与 `v1.0.2` 两个仓储的发行版均含同一组 APK，且 v1.0.2 通用包在两边都下载比对过哈希。**但双推不等于两边都更新**：本轮 `git push origin master` 只更新了 Gitee，GitHub 静默停在旧提交，补推 `git push github master` 才一致 —— 每次推送后必须分别 `git ls-remote origin/github refs/heads/master` 读回比对。详见 `knowledge/release.md`。
 - 早期提交记录：TASK-014 功能提交 `0342855` 已推送；TASK-040~044 的改动曾长期只存在于工作区，2026-09-12 12:47 补交为 `704c35b`（feat）与 `a029a21`（docs）。提交使用用户指定的仓库级专用邮箱，未改写历史。
 - 提交前用 `git status` 与 `git rev-list --left-right --count HEAD...origin/master` 确认工作区与远端状态：本轮曾出现「知识库记为已完成验收、但改动从未提交」的情况，验收结论与提交状态必须分开核对。
 
 ## Validation Snapshot
 
-- `CONFIRMED`（2026-09-13 02:35 +08:00，TASK-060）：v1.0.2 测试版已构建并发布。提交 `cbac818`（feat：UI/明暗主题）、`6c36462`（docs：报告）、`9772985`（chore：版本号 `1.0.2+3`）；`master` 与 tag `v1.0.2`（annotated `8dacc41` → `9772985`）在 Gitee/GitHub 读回一致。产出分 ABI 三个 APK 与通用包 `ncpu-timetable-1.0.2-universal.apk`（40,526,034 B / SHA-256 `edf5f4c1…451b3e8`）；`aapt2` 确认含 `INTERNET`，`apksigner` 确认为正式证书 `2e8ac142…`。模拟器卸载 debug 版后安装 x86_64 release 包：冷启动 `ok` / COLD / 1330 ms、无 `DEBUGGABLE`、教务登录页完整渲染、logcat 无致命异常与会话字段；日间与手动夜间实画均正常。GitHub 发行版 `387662208`（预发布）附件齐全，下载通用包哈希与本地一致，说明 440 汉字 / 0 U+FFFD。**`BLOCKED`**：Gitee 发行版与附件未创建（本机无 API 令牌，`Access token does not exist`），因此两仓的发行版集合暂不一致，Git 分支与 tag 一致。本轮另一个教训：`git push origin master` 双推**只保证命令成功、不保证两边都更新**，本次 GitHub 一条静默未更新，补推 `git push github master` 后才一致，必须逐个 `git ls-remote` 读回。
+- `CONFIRMED`（2026-09-13 03:05 +08:00，TASK-060）：v1.0.2 测试版已在**两个仓库**发布完成。提交 `cbac818`（feat：UI/明暗主题）、`6c36462`（docs：报告）、`9772985`（chore：版本号 `1.0.2+3`）、`9265922`（docs：发布记录）；`master` = `9265922`，tag `v1.0.2`（annotated `8dacc41` → `9772985`）在 Gitee/GitHub 读回一致。产出分 ABI 三个 APK 与通用包 `ncpu-timetable-1.0.2-universal.apk`（40,526,034 B / SHA-256 `edf5f4c1…451b3e8`）；`aapt2` 确认含 `INTERNET`，`apksigner` 确认为正式证书 `2e8ac142…`。模拟器卸载 debug 版后安装 x86_64 release 包：冷启动 `ok` / COLD / 1330 ms、无 `DEBUGGABLE`、教务登录页完整渲染、logcat 无致命异常与会话字段；日间与手动夜间实画均正常。发行版 GitHub `387662208` 与 Gitee `1140399`（均预发布、同一组附件）说明文本均为 440 汉字 / 0 U+FFFD；**两个平台的通用包都实际下载比对过 SHA-256，与本地一致**（GitHub 4.1 s / Gitee 31.5 s）。Gitee 发行版一开始 `BLOCKED` 于令牌（凭据管理器只有 10 位 git 口令，`Access token does not exist`），由用户提供令牌后补建，**该令牌需用户自行撤销**。教训：`git push origin master` 双推只保证命令成功、不保证两边都更新，本次 GitHub 一条静默未更新，补推后才一致，必须逐个 `git ls-remote` 读回。
 - `CONFIRMED`（2026-09-13 02:00 +08:00，TASK-059）：TASK-054~058 的 UI/主题改动与交接报告已从工作区固化为两个提交（`cbac818` feat、`6c36462` docs）并经 `origin` 双推；两个远端 `master` 读回均为 `6c36462`。工作区与远端不再存在「已验收未提交」的落差。
 
 - `CONFIRMED`（2026-09-13 01:56 +08:00，TASK-059）：新增 `report_2026-09-13_ui_theme_and_next_plan.md`，汇总 TASK-054～058 的更新、实施问题、证据边界、下一步 UI/版本/多校计划；知识库索引与主题架构同步更新。远端同步结果需以本轮提交和 push 读回为准。
@@ -116,7 +115,7 @@
 
 优先在 `ncpu_api36` 模拟器上执行 TASK-039 与 TASK-019 中「可造数据、可改时钟、可重启」的部分：通知的实际到点、课程变化重排、关闭取消、重启恢复，以及小组件的即时刷新、缩放、「还有 N 门课」溢出与跨天重算（改模拟器日期/时区即可，不碰真机生产库）。真机只保留必须项：厂商启动器下的小组件排版、厂商省电策略下的通知与后台行为、arm64 原生库路径。两项真机验收关闭后，再做 release 的真机落地：换正式签名必须先卸载、本机课表与登录态会丢，且 arm64-v8a release 包尚未在真机验证，因此顺序不能颠倒。
 
-release 分发：v1.0.2 测试版已构建并发布到 GitHub 发行版（id `387662208`，预发布，通用包 + arm64），下载哈希已核对。**Gitee 侧发行版尚未建立**：本机没有 Gitee API 令牌（凭据管理器里只有 10 位账号口令），需要用户提供 `projects` 权限令牌后补建同内容发行版。**不要分发 v1.0.0 的产物**（缺 `INTERNET`，教务不可用，见 ISSUE-015）；v1.0.1 的发行版保留不动。后续若要更新测试版，用同一 keystore 签新 versionCode 即可覆盖安装。
+release 分发：v1.0.2 测试版已发布到 GitHub 与 Gitee 两个发行版（GitHub `387662208` / Gitee `1140399`，均预发布，通用包 + arm64），两边的通用包都下载比对过哈希，与本地一致。**不要分发 v1.0.0 的产物**（缺 `INTERNET`，教务不可用，见 ISSUE-015）；v1.0.1 的发行版保留不动。后续若要更新测试版，用同一 keystore 签新 versionCode 即可覆盖安装；**Gitee 发行版需要单独向用户索取 `projects` 权限令牌**，本机没有存量（凭据管理器只有 git 口令）。
 
 多校接入方向：计划书（`knowledge/plan_multischool_2026-09-12.md`）已就绪，**在用户回答 D1–D6 之前不要开工**。用户若选择先做阶段 0–1，可从「引入 `SchoolProfile` 并把 NCPU 常量搬进去、`ensureDefaults()` 改为只播种不覆盖」起步，该阶段行为不变、可由现有 132 个测试兜底。
 

@@ -137,13 +137,15 @@ flutter build apk --release --target-platform android-arm,android-arm64
 
 | 平台 | 状态 | 详情 |
 | --- | --- | --- |
-| Git 分支与 tag | `CONFIRMED` 两边一致 | `master` = `9772985`；tag `v1.0.2`（annotated `8dacc41` → commit `9772985`）在 Gitee 与 GitHub 读回一致 |
+| Git 分支与 tag | `CONFIRMED` 两边一致 | `master` = `9265922`；tag `v1.0.2`（annotated `8dacc41` → commit `9772985`）在 Gitee 与 GitHub 读回一致 |
 | GitHub 发行版 | `CONFIRMED` 已发布 | id `387662208`，tag `v1.0.2`，预发布；附件 `ncpu-timetable-1.0.2-universal.apk`（40,526,034 B）与 `app-arm64-v8a-release.apk`（22,185,532 B） |
-| Gitee 发行版 | `BLOCKED` 待建 | 缺 Gitee API 令牌；仓库内没有可用的 `access_token`（见下） |
+| Gitee 发行版 | `CONFIRMED` 已发布 | id `1140399`，tag `v1.0.2`，预发布；同一组附件，下载地址与 `v1.0.1` 同规则（`/releases/download/v1.0.2/<文件名>`） |
 
 `CONFIRMED`（GitHub 验证，2026-09-13）：发行版说明读回 440 个汉字、0 个 U+FFFD，与本地说明文件逐字一致；从发行版下载通用包得到 40,526,034 B / 4.1 s，SHA-256 `edf5f4c1…451b3e8` 与本地构建产物完全一致。
 
-`BLOCKED`（Gitee，2026-09-13）：`POST /repos/chenxihh/test_c/releases` 返回 `HTTP 401 {"message":"401 Unauthorized: Access token does not exist"}`。原因不是配置错误，而是**本机没有存 Gitee API 令牌**：Windows 凭据管理器里 `gitee.com` 的密码是 10 位账号口令，只够 `git push` 认证，用它调 `/api/v5/user` 同样返回 `Access token does not exist`；v1.0.1 发布用的令牌按当时约定未落盘。需要用户提供新令牌（权限勾 `projects`）后才能补建 Gitee 发行版并上传同一组 APK。**Git 仓库与 tag 已经同步，缺的只有 Gitee 网页上那一条发行版记录与附件。**
+`CONFIRMED`（Gitee 验证，2026-09-13）：发行版 `1140399` 读回 tag `v1.0.2` / `prerelease=true`，两个上传附件与两个 tag 源码包均在列；说明同样是 440 汉字 / 0 U+FFFD 且与本地逐字一致；实际下载通用包 40,526,034 B / 31.5 s，SHA-256 与本地一致。
+
+**Gitee 发行版需要单独的 API 令牌，仓库里没有。** 首次尝试时 `POST /repos/chenxihh/test_c/releases` 返回 `HTTP 401 {"message":"401 Unauthorized: Access token does not exist"}` —— 原因不是配置错误，而是 Windows 凭据管理器里 `gitee.com` 存的是 **10 位账号口令，只够 `git push`**，用它调 `/api/v5/user` 也报同一错误；v1.0.1 发布用的令牌按当时约定用完即撤、从未落盘。**正确做法**：先向用户索取一个有 `projects` 权限的私人令牌，用它建发行版与传附件，用完提醒撤销。GitHub 侧相反，40 位 classic PAT 已存在凭据管理器，API 与 `git push` 可直接复用。
 
 > ⚠️ `git push origin master` 的双推**不保证两边都成功**。本轮第一次双推更新了 Gitee，GitHub 仍停在旧提交且命令未报错；补推 `git push github master` 才一致。**每次双推后必须分别 `git ls-remote origin/github refs/heads/master` 读回两边的哈希**，不要只看命令是否返回 0。
 
@@ -241,7 +243,7 @@ git config --local http.https://github.com.proxy http://127.0.0.1:7897
   - `copilot/test-branch` = `099f69ce5819efb7a30f89ed6dad4a9c26a08d5e`（README.md 28 B）
 - tag `v1.0.0` / `v1.0.1` 已推送。
 - 发行版 `v1.0.1`（id `387624284`，预发布）已创建，附件与 Gitee 相同：`ncpu-timetable-1.0.1-universal.apk`（40,476,186 B）与 `app-arm64-v8a-release.apk`（22,184,832 B），说明文本与 Gitee 一致。
-- 发行版 `v1.0.2`（id `387662208`，预发布）已创建：`ncpu-timetable-1.0.2-universal.apk`（40,526,034 B）与 `app-arm64-v8a-release.apk`（22,185,532 B）。下载地址 `https://github.com/cxi75100-sketch/test1/releases/download/v1.0.2/<文件名>`；说明文本与本地文件逐字一致，下载哈希已验证。Gitee 侧对应发行版尚未建立（`BLOCKED` 于令牌），因此**当前两个仓库的发行版集合不一致**，只有 Git 分支与 tag 一致。
+- 发行版 `v1.0.2`（id `387662208`，预发布）已创建：`ncpu-timetable-1.0.2-universal.apk`（40,526,034 B）与 `app-arm64-v8a-release.apk`（22,185,532 B）。下载地址 `https://github.com/cxi75100-sketch/test1/releases/download/v1.0.2/<文件名>`；说明文本与本地文件逐字一致，下载哈希已验证。Gitee 侧对应发行版 `1140399` 随后已补建，**两个仓库的分支、tag 与发行版集合现已一致**。
 
 ### GitHub API 要点
 
