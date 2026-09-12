@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-09-12 - Agent（TASK-045 release 签名与分 ABI 打包）
+
+Added:
+- `android/app/build.gradle.kts` 接入 release 签名：从 `android/key.properties` 读取 keystore，文件缺失时回退 debug 签名，任何机器都仍可 `flutter run --release`。
+- `.gitignore` 新增 `android/key.properties`、`**/*.jks`、`**/*.keystore` 兜底；keystore 本体放在**仓库外** `D:\Tools\android-keys\`，不进公开仓库。
+- 新增 `knowledge/release.md`：签名材料位置与指纹、构建与验证结果、分发步骤、备份与顺序约束。
+
+Validation:
+- `CONFIRMED` `flutter build apk --release --split-per-abi`（172.8 s）产出 arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB，对照 debug fat APK 198 MB；`apksigner verify --print-certs` 确认三个包均为正式证书（DN `CN=NCPU Timetable Release…`，SHA-256 `2e8ac142…`），非 debug 证书。
+- `CONFIRMED` 在 `ncpu_api36` 上卸载 debug 签名版本后安装 x86_64 release 包：冷启动 `Status: ok` / `LAUNCH_STATE_COLD` / 937 ms，`dumpsys package` 显示 `flags=0x0`（非 debuggable），`run-as` 报 `package not debuggable`。
+- `CONFIRMED` logcat 无 `FATAL` / `AndroidRuntime` / `MissingPluginException` / `E/flutter`；按 App pid 过滤后无 Cookie、Session、Token、password、账号或 `jwglxt` 字段，满足「Release 模式不得输出登录会话信息」。
+- `CONFIRMED` 语义树确认今日/整周双栏目与「第 2 周 · 0 门课程」正常渲染；`dumpsys appwidget` 确认 `TimetableWidgetProvider` 已注册，间接证明 release 模式下 x86_64 原生 SQLite 可用。
+- `UNVERIFIED` arm64-v8a release 包未在 arm64 真机验证 —— 换签名必须先卸载并会丢本机课表与登录态，按要求排在 TASK-019 / TASK-039 之后。
+- 未开启 `minifyEnabled` / `shrinkResources`（inappwebview 兼容补丁与 AGP 9 已移除的默认 ProGuard 文件相关，开混淆需单独验证）。未创建 Gitee 发行版：release 附件 API 需要 `access_token`。
+
 ## 2026-09-12 - Agent（TASK-044 满课一屏显示）
 
 Changed:

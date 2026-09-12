@@ -2,7 +2,7 @@
 
 ## Last Updated
 
-2026-09-12 12:50 +08:00
+2026-09-12 13:02 +08:00
 
 ## Project Boundary
 
@@ -14,7 +14,7 @@
 
 ## Current Milestone
 
-里程碑 1（本地课表）、里程碑 2（教务导入主链路）均已完成真机端到端验收 —— 用户本人登录导入并确认写入，替换等价且手动课程保留。里程碑 3（Android 桌面小组件）已真机确认：可在启动器找到并添加、表头与当天课程渲染正确、点击可打开 App。Android 本地上课提醒代码已完成并通过自动化、原生构建与 APK 静态校验，尚待真机验证权限、实际到点、重排和重启恢复。Android 模拟器验证环境（AVD `ncpu_api36`）已搭建并通过实测，后续「可造数据、可改时钟、可重启」的验收转入模拟器执行。剩余工作：小组件剩余验收项、通知真机验收（TASK-039）、release 分发准备。
+里程碑 1（本地课表）、里程碑 2（教务导入主链路）均已完成真机端到端验收 —— 用户本人登录导入并确认写入，替换等价且手动课程保留。里程碑 3（Android 桌面小组件）已真机确认：可在启动器找到并添加、表头与当天课程渲染正确、点击可打开 App。Android 本地上课提醒代码已完成并通过自动化、原生构建与 APK 静态校验，尚待真机验证权限、实际到点、重排和重启恢复。Android 模拟器验证环境（AVD `ncpu_api36`）已搭建并通过实测，后续「可造数据、可改时钟、可重启」的验收转入模拟器执行。剩余工作：小组件剩余验收项、通知真机验收（TASK-039），以及把已构建好的分 ABI release APK 发布到 Gitee 发行版。里程碑 4 的签名与打包链路已打通（TASK-045）。
 
 ## Working Features
 
@@ -36,6 +36,7 @@
 - Android 本地上课提醒：默认关闭，用户主动开启；默认提前 15 分钟，可选 5/10/15/30。按当前学期、课程周次与统一作息排程，数据变化/回前台时重建；精确闹钟不可用时降级并提示。
 - Windows Android 工具链与 Debug APK 构建通路已打通；项目内固定 `flutter_inappwebview_android` 兼容补丁，不依赖全局 Pub Cache。
 - Android 模拟器验证环境已就绪：AVD `ncpu_api36`（API 36 / google_apis / x86_64），WHPX 硬件加速可用，Debug APK 可安装冷启动，x86_64 原生 SQLite 与小组件载荷链路均正常。用于承担需要造数据、改时钟、重启的验证。
+- Release 打包链路已打通：`flutter build apk --release --split-per-abi` 产出分 ABI 的正式签名 APK（arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB）；签名材料由 `android/key.properties` 驱动，缺失时回退 debug 签名。详见 `knowledge/release.md`。
 
 ## In Progress
 
@@ -43,7 +44,8 @@
 
 ## Not Started
 
-- Release 签名与分发准备。
+- Gitee 发行版创建与 APK 附件上传（release 附件 API 需要 `access_token`，本轮未执行，需在网页端操作）。
+- Play Store 上传所需的 AAB / v3 签名 / 分包策略。
 
 ## Current Blockers
 
@@ -60,6 +62,7 @@
 - 中文工作区直接运行 `flutter analyze` 仍可能触发 LSP JSON 异常；使用 `subst R: "D:\桌面\课程表"` 后在 `R:\` 执行。
 - Android Gradle 仍输出 AGP 9 built-in Kotlin 迁移/Gradle 10 兼容性弃用警告；当前不影响构建与测试，后续单独升级处理。
 - 小组件协议为 `schemaVersion=1`；修改时必须同步 Dart/Kotlin 常量与两侧测试。
+- Release keystore 位于**仓库外** `D:\Tools\android-keys\ncpu-timetable-release.keystore`（PKCS12 / RSA 2048 / alias `ncpu`，证书 SHA-256 `2e8ac142…`），密码只写在本机 `android/key.properties`；两样都必须离线备份，丢失后无法用同一签名发布更新。**换正式签名必须先在设备上卸载，会丢本机课表与登录态**，因此真机切换只能在 TASK-019 / TASK-039 验收之后。
 - 当前学期开学第一周周一为 `2026-08-31`（用户确认，且与教学周历一致）；`2026-09-10` 起属于第 2 周。该值已固化为代码默认常量，两台真机的生产库和小组件载荷均已同步为该日期。
 - 两台真机：vivo V1981A（Android 12 / API 31，2026-09-10 完成覆盖安装与冷启动验收）与 OnePlus PLC110（Android 16 / API 36 / arm64-v8a，2026-09-11 完成全新安装）。
 - Android 模拟器：AVD `ncpu_api36`（pixel_7 / API 36 / google_apis / x86_64 / 2 GB RAM），`emulator` 37.1.11.0，硬件加速走 WHPX（`emulator -accel-check` 退出码 0），启动器为 Launcher3（支持小组件）。用途是替代真机做**可造数据、可改时钟、可重启**的验证；**不替代**厂商启动器下的 RemoteViews 排版、厂商省电策略下的后台/通知行为与 arm64 原生库路径。
@@ -68,6 +71,7 @@
 
 ## Validation Snapshot
 
+- `CONFIRMED`（2026-09-12 13:02 +08:00，TASK-045）：release 签名与分 ABI 打包完成。`flutter build apk --release --split-per-abi`（172.8 s）产出 arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB（debug fat APK 对照 198 MB）；`apksigner` 确认三个包同一正式证书（SHA-256 `2e8ac142d9c68df3ebc45a77269b8c9d98ad313c4763ab704ba68087a8b58799`）。在 `ncpu_api36` 卸载 debug 签名版本后安装 x86_64 release 包：冷启动 `Status: ok` / 937 ms，`flags=0x0` 非 debuggable，logcat 无致命异常且 App 日志无会话字段，语义树确认今日/整周双栏目与「第 2 周 · 0 门课程」渲染，`TimetableWidgetProvider` 已注册。keystore 在仓库外，`.gitignore` 已兜底。`UNVERIFIED`：arm64-v8a 真机安装（需先卸载、会丢数据，排在 TASK-019/039 之后）；Gitee 发行版附件未上传。
 - `CONFIRMED`（2026-09-12 12:47 +08:00）：TASK-040~044 的改动已从工作区固化为两个提交并推送 —— `704c35b`（feat：今日/整周双栏目与横向周视图）与 `a029a21`（docs：模拟器环境与改版验收）；本地 `HEAD`、`origin/master` 与 Gitee `refs/heads/master` 均为 `a029a21`。推送前在 `R:\` 独立重跑 `flutter analyze` 无问题、`flutter test` 132/132，`pubspec.lock` 无变化；提交前扫描确认差异无凭据或构建产物。附带发现：工作区中已按 TASK-041~044 验收的改动此前从未提交，`.dart_tool/package_config.json` 也停留在新增通知依赖之前（详见 `knowledge/testing.md` Tooling Note）。
 - `CONFIRMED`（2026-09-12 12:37 +08:00，TASK-044）：整周日列已移除半区内部 `ListView`，上午两格和下午/晚间三格按节次定位；满课 Widget 回归确认五张课程卡均渲染、两半等高且半区内无 `Scrollable`。新增入口从右下悬浮按钮移至顶部，避免遮挡末节课程。`flutter analyze` 无问题，`flutter test` 132/132，Debug APK 构建并在 `ncpu_api36` 覆盖安装、启动成功；真实 Android 画面确认周四五张满课卡一次全部可见、周五单门上午课落在对应节次格，logcat 无致命异常或布局溢出。未修改课程数据。
 - `CONFIRMED`（2026-09-12 12:22 +08:00，TASK-043）：整周课表已重做为“一天一列、上下各半”的横向周视图；七天横向滑动、上午/下午晚间等高、晚课保留、课程详情与完整元数据均有 Widget 回归。`flutter analyze` 无问题，`flutter test` 132/132；Debug APK 构建成功，在 `ncpu_api36` 覆盖安装与冷启动成功（2474 ms）。真实 Android 画面检查首屏约两列半、横滑后连续显示后续日期，列间无重叠，浮动按钮未遮挡课程；logcat 无致命异常或布局溢出。临时 Computer Use 截图已清理，未修改课程数据。
@@ -99,7 +103,9 @@
 
 ## Recommended Next Action
 
-优先在 `ncpu_api36` 模拟器上执行 TASK-039 与 TASK-019 中「可造数据、可改时钟、可重启」的部分：通知的实际到点、课程变化重排、关闭取消、重启恢复，以及小组件的即时刷新、缩放、「还有 N 门课」溢出与跨天重算（改模拟器日期/时区即可，不碰真机生产库）。真机只保留必须项：厂商启动器下的小组件排版、厂商省电策略下的通知与后台行为、arm64 原生库路径。两项真机验收关闭后进入里程碑 4（release 签名与分 ABI 打包）——注意换正式签名必须先卸载，本机课表与登录态会丢，因此只能排在验收之后。
+优先在 `ncpu_api36` 模拟器上执行 TASK-039 与 TASK-019 中「可造数据、可改时钟、可重启」的部分：通知的实际到点、课程变化重排、关闭取消、重启恢复，以及小组件的即时刷新、缩放、「还有 N 门课」溢出与跨天重算（改模拟器日期/时区即可，不碰真机生产库）。真机只保留必须项：厂商启动器下的小组件排版、厂商省电策略下的通知与后台行为、arm64 原生库路径。两项真机验收关闭后，再做 release 的真机落地：换正式签名必须先卸载、本机课表与登录态会丢，且 arm64-v8a release 包尚未在真机验证，因此顺序不能颠倒。
+
+release 分发侧只差发布动作：APK 已在 `build/app/outputs/flutter-apk/`（`app-arm64-v8a-release.apk` 21.2 MB、`app-armeabi-v7a-release.apk` 18.7 MB，SHA-256 见 `knowledge/release.md`），在 Gitee 发行版页面选 `v1.0.0` 上传即可；release 附件 API 需要 `access_token`，本轮未由 Agent 执行。
 
 提交邮箱决策已关闭：用户已指定后续使用的专用邮箱，仅写入本仓库 Git 配置。历史 9 个提交不改写；若以后需要清理历史，必须作为独立高风险任务再确认。
 
@@ -111,10 +117,11 @@
 - `SchoolAdapter` 当前接口为 `parseTimetable(rawResponse, semesterId)`；适配器不接触 Cookie、Session 或 Token。
 - 教务原始响应通过独立 JS 桥进入内存，Debug 脱敏报告走另一桥接通道，二者不得合并。
 - 导入差异模型 `ImportDiff` 使用 `added` / `removed` / `changed` 三类；`changed` 逐字段按内容比较，并同时保留旧课程与新课程。
+- Release 打包链路：`android/app/build.gradle.kts` 由 `android/key.properties` 读签名材料（缺失回退 debug 签名），`flutter build apk --release --split-per-abi` 产出三个正式签名 APK；keystore 在仓库外，见 `knowledge/release.md`。
 
 ### What is verified
 
-- 源码静态检查与 130 个 Dart/Flutter 测试通过。
+- 源码静态检查与 **132 个** Dart/Flutter 测试通过（2026-09-12 推送前在 `R:\` 独立重跑确认）。
 - 13 个 Android 原生小组件 JVM 测试通过（2026-09-11 `--rerun` 强制重跑确认 13/13；本轮未改动 Kotlin）。
 - 真实教务系统类型、登录入口、核心课表端点、菜单号和 `kbList` 关键字段已通过真机脱敏采集确认。
 - **教务导入端到端已在真机验收通过（TASK-021）**：用户本人登录 → 预览 27 条 → 确认写入 → 替换等价（id 指纹不变）→ 手动课程经 rowid 位移反证被保留。
@@ -123,6 +130,7 @@
 - 2026-09-11 本轮改动（TASK-029/030/031）已在 OnePlus PLC110 覆盖安装并冷启动通过；HTTP 缓存清理经对照实验确认可归因生效且保留登录态；首页「第 2 周」经 uiautomator 语义树确认。
 - 小组件已在 OnePlus PLC110 真机确认：启动器可选择并添加「南工课表」、表头与当天课程时间渲染正确、点击可打开 App（ISSUE-011 关闭、ISSUE-013 修复后复验）。
 - Android 模拟器环境已实测可用（TASK-040）：WHPX 硬件加速、API 36 / x86_64、Debug APK 冷启动、x86_64 原生 SQLite 建库、小组件载荷与 provider 注册、UI 语义树读取均通过；可承担需要造数据、改时钟、重启的验证。
+- Release 分 ABI 打包已在模拟器验证（TASK-045）：三个 APK 同一正式证书、非 debuggable、冷启动 937 ms、无致命日志与会话输出、界面与小组件 provider 正常。`arm64-v8a` 真机安装仍未验证（需先卸载并丢数据，排在 TASK-019/039 之后）。
 - `officialFirstWeekMonday` 与 `ensureDefaults()` 的关系、`termStatus` 边界、导入差异三类归类（含同 id 详情变化与 `next` 混入 manual）、清理器不抛异常、提示条与预览差异区出现条件均有自动化测试锁定。
 
 ### What remains unverified

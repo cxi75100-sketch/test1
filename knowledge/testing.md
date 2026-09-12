@@ -29,6 +29,7 @@
 ## Passed
 
 - `flutter analyze`（在 `R:\` 下）：No issues found。
+- `flutter build apk --release --split-per-abi`（2026-09-12 13:00 +08:00，TASK-045）：172.8 s 成功，产出 arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB；`apksigner verify --print-certs` 确认三个包均为正式证书（SHA-256 `2e8ac142…`）。在 `ncpu_api36` 卸载 debug 签名版本后安装 x86_64 release 包：冷启动 `Status: ok` / COLD / 937 ms，`flags=0x0` 非 debuggable，`run-as` 报 `package not debuggable`；logcat 无 `FATAL`/`AndroidRuntime`/`MissingPluginException`/`E/flutter`，按 App pid 过滤无 Cookie/Session/Token/password/账号/`jwglxt` 字段；语义树确认今日/整周双栏目与「第 2 周 · 0 门课程」渲染；`dumpsys appwidget` 确认 `TimetableWidgetProvider` 已注册（间接证明 release 下原生 SQLite 可用）。
 - `flutter analyze`（2026-09-12 12:35 +08:00，TASK-044）：No issues found。
 - `flutter test`（2026-09-12 12:35 +08:00，TASK-044）：132 tests passed；新增同一天上午 2 门、下午/晚间 3 门的满课回归，确认五门课全部渲染且半区内无纵向滚动。
 - `flutter build apk --debug`（2026-09-12 12:36 +08:00，TASK-044）：成功；在 `ncpu_api36` 覆盖安装与启动成功，真实 Android 画面确认满课五张卡一屏可见、按节次格定位且无悬浮按钮遮挡；logcat 无 App 致命异常或 `RenderFlex overflowed`。
@@ -145,7 +146,7 @@
 - 导入预览差异区块在真实教务数据变化时的真机显示：当日教务数据未变，只观察到「无变化」；新增/移除/修改三类排版与「旧值 → 新值」明细由 widget 测试覆盖。
 - 本地通知的真机权限弹窗、系统设置中的精确闹钟授权、实际到点通知、厂商后台限制、课程变化后的系统待触发列表与重启恢复；时区和调度纯逻辑已有自动化覆盖，不能替代真机验证。
 - 自动测试已覆盖重新导入的替换持久化与手动课程保留；真机侧已在 TASK-021 验证。
-- Release 签名（当前 Debug 用 Android Debug 证书；release 走 debug signingConfig，`android/app/build.gradle.kts` 已注明 TODO）。
+- Release 真机落地与商店上架：`arm64-v8a` release 包尚未在 arm64 真机安装（换签名必须先卸载、会丢本机课表与登录态，排在 TASK-019 / TASK-039 之后）；Play Store 所需的 AAB、v3 签名与分包策略未做。签名配置本身已完成并在模拟器验证，见 `knowledge/release.md`。
 - Play Store 上传所需的 AAB / v3 签名 / 分包策略。
 - WebView 内当前版本的 JavaScript 取数与预览交互；App 不做 Cookie 管理或表单自动填充。
 - 桌面小组件的真机表现：RemoteViews 在不同启动器下的尺寸/字号、30 分钟周期刷新的实际时延、SharedPreferences 载荷存储。
