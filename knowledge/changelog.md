@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-12 - Agent（TASK-050 发布 v1.0.1 测试版）
+
+Published:
+- Gitee 发行版 `1140059`（tag `v1.0.1`，预发布）创建完成，附 `ncpu-timetable-1.0.1-universal.apk`（40,476,186 B，通用包）与 `app-arm64-v8a-release.apk`（22,184,832 B）。说明含两个包的 SHA-256、安装提示与已知限制。
+- 用途：发给他人测试。通用包同时含 arm64 与 32 位真实原生库，覆盖所有真机，避免测试者选错架构。
+
+Validation:
+- `CONFIRMED` 公开接口读回确认两个附件可见；实际下载通用包得到 40,476,186 B，SHA-256 `0b674d3b…f242694` 与本地构建产物完全一致。临时下载文件已删除。
+- `CONFIRMED` 接口事实：`POST /releases` 必须带 `target_commitish`（否则报 `target_commitish is missing`），附件上传走 `POST /releases/{id}/attach_files` 的 multipart 表单；两者不带令牌均返回 `HTTP 401`。步骤已记入 `knowledge/release.md`。
+
+Note:
+- 令牌只在本机命令行使用，未写入任何文件（已扫描确认仓库无痕迹）。**用户需自行撤销曾出现在聊天记录中的令牌。**
+- v1.0.0 产物仍然作废，不得分发。
+
 ## 2026-09-12 - Agent（TASK-049 修复 release 包无法联网）
 
 Fixed:

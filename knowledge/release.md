@@ -91,9 +91,42 @@ flutter build apk --release --target-platform android-arm,android-arm64
 
 ## 分发
 
-1. 打 tag 并推送：`git tag -a v1.0.0 -m "..."` → `git push origin v1.0.0`。
-2. 在 Gitee 仓库的「发行版」页面创建发行版，选择 `v1.0.0`，上传 `app-arm64-v8a-release.apk`（可选 `app-armeabi-v7a-release.apk`），并把上表 SHA-256 贴进说明。
-3. `UNVERIFIED`：GitHub/Gitee 的 release 附件 API 需要 `access_token`，本轮未执行上传，发行版仍需在网页端创建。
+`CONFIRMED`（2026-09-12）：**v1.0.1 测试版已发布到 Gitee 发行版。**
+
+- 发行版页面：<https://gitee.com/chenxihh/test_c/releases/tag/v1.0.1>（标记为预发布）
+- release id `1140059`，tag `v1.0.1` → 提交 `645b890`
+
+| 附件 | 体积 | 下载地址 |
+| --- | --- | --- |
+| `ncpu-timetable-1.0.1-universal.apk` | 40,476,186 B | `https://gitee.com/chenxihh/test_c/releases/download/v1.0.1/ncpu-timetable-1.0.1-universal.apk` |
+| `app-arm64-v8a-release.apk` | 22,184,832 B | `https://gitee.com/chenxihh/test_c/releases/download/v1.0.1/app-arm64-v8a-release.apk` |
+
+`CONFIRMED` 验证方式：用公开接口读回发行版确认两个附件可见；再从下载地址实际下载通用包，得到 40,476,186 B / 耗时 30.5 s，SHA-256 `0b674d3b…f242694` 与本地构建产物**完全一致**。临时下载文件已删除。
+
+### 发布步骤（可复现）
+
+1. `git tag -a v1.0.1 -m "..."` → `git push origin v1.0.1`。
+2. 创建发行版（**必须带 `target_commitish`，否则接口报 `target_commitish is missing`**）：
+
+   ```bash
+   curl -s -X POST "https://gitee.com/api/v5/repos/chenxihh/test_c/releases" \
+     -d "access_token=$TOKEN" -d "tag_name=v1.0.1" -d "name=v1.0.1 测试版" \
+     -d "target_commitish=$(git rev-list -n1 v1.0.1)" -d "prerelease=true" \
+     --data-urlencode "body=$BODY"
+   ```
+
+3. 上传附件（**multipart，`access_token` 也作为表单字段**），`{release_id}` 取上一步返回的 `id`：
+
+   ```bash
+   curl -s -X POST "https://gitee.com/api/v5/repos/chenxihh/test_c/releases/{release_id}/attach_files" \
+     -F "access_token=$TOKEN" -F "file=@R:/build/app/outputs/flutter-apk/ncpu-timetable-1.0.1-universal.apk"
+   ```
+
+4. 读回校验：`GET /releases/{release_id}` 确认附件存在，再下载一次比对 SHA-256。
+
+`CONFIRMED` 接口事实：`GET /releases` 与 `GET /releases/{id}` 公开可读；`POST /releases`、`POST /releases/{id}/attach_files` 不带令牌返回 `HTTP 401` + `{"message":"登录失效，无权限访问该资源","code":40001}`，必须携带 `access_token`。令牌权限勾 `projects` 即可。
+
+安全：令牌只在本机命令行内使用，未写入任何文件（已扫描确认仓库内无令牌痕迹）。**发布完成后应立即到 Gitee 撤销该令牌**，尤其是曾把令牌贴进聊天记录的场合。
 
 ## 约束与风险
 
