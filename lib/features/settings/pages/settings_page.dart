@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_palette.dart';
+import '../../../core/theme/theme_preference.dart';
+import '../../../core/theme/theme_preference_provider.dart';
+import '../../../core/widgets/ambient_background.dart';
 import '../../../models/semester.dart';
 import '../../notifications/models/notification_preferences.dart';
 import '../../notifications/providers/notification_providers.dart';
@@ -18,181 +22,248 @@ class SettingsPage extends ConsumerWidget {
     final reminder =
         notificationPreferences.value ?? const NotificationPreferences();
     final reminderLoading = notificationPreferences.isLoading;
+    final themePreference =
+        ref.watch(themePreferenceProvider).value ?? ThemePreference.system;
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text(
-          '设置',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 22),
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '设置中心',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22),
+            ),
+            Text(
+              'PREFERENCES',
+              style: TextStyle(
+                color: AppPalette.coral,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 36),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF405FD0), Color(0xFF6C63DB)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      body: AmbientBackground(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 36),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppPalette.ink, Color(0xFF29355E)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x3318213D),
+                    blurRadius: 24,
+                    offset: Offset(0, 10),
+                  ),
+                ],
               ),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: AppPalette.sun,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.school_rounded,
+                      color: AppPalette.ink,
+                    ),
                   ),
-                  child: const Icon(Icons.school_rounded, color: Colors.white),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '南昌工学院',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        '本地课表 · 数据只保存在此设备',
-                        style: TextStyle(
-                          color: Color(0xFFDCE2FF),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const _SectionLabel('课表'),
-          Card(
-            child: Column(
-              children: [
-                _SettingsTile(
-                  icon: Icons.cloud_download_outlined,
-                  iconColor: const Color(0xFF4967D8),
-                  title: '教务导入',
-                  subtitle: '打开候选教务地址（首次进入会提示风险）',
-                  onTap: () => context.push('/import/login'),
-                ),
-                const Padding(
-                  padding: EdgeInsets.only(left: 64),
-                  child: Divider(),
-                ),
-                _SettingsTile(
-                  icon: Icons.calendar_month_outlined,
-                  iconColor: const Color(0xFF28A184),
-                  title: '学期设置',
-                  subtitle: semester == null
-                      ? '正在初始化…'
-                      : '${semester.name} · ${semester.totalWeeks} 周\n开学周一 ${_date(semester.firstWeekMonday)}',
-                  onTap: semester == null
-                      ? null
-                      : () => showDialog<void>(
-                          context: context,
-                          builder: (context) => _SemesterDialog(
-                            initial: semester,
-                            onSave: ref.read(databaseProvider).upsertSemester,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '南昌工学院',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const _SectionLabel('偏好与隐私'),
-          Card(
-            child: Column(
-              children: [
-                _SettingsTile(
-                  icon: reminder.enabled
-                      ? Icons.notifications_active_rounded
-                      : Icons.notifications_none_rounded,
-                  iconColor: const Color(0xFFF09A4B),
-                  title: '上课提醒',
-                  subtitle: reminder.enabled
-                      ? '已开启 · 提前 ${reminder.minutesBefore} 分钟'
-                      : '已关闭 · 默认提前 15 分钟',
-                  trailing: Switch(
-                    value: reminder.enabled,
-                    onChanged: reminderLoading
-                        ? null
-                        : (value) =>
-                              _setNotificationEnabled(context, ref, value),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '本地课表 · 数据只保存在此设备',
+                          style: TextStyle(color: Colors.white60, fontSize: 12),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppPalette.mint,
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified_user_outlined,
+                                size: 13,
+                                color: AppPalette.ink,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                '仅本机存储',
+                                style: TextStyle(
+                                  color: AppPalette.ink,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const _SectionLabel('外观'),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: _ThemeSelector(
+                  value: themePreference,
+                  onChanged: (value) => setThemePreference(ref, value),
                 ),
-                if (reminder.enabled) ...[
+              ),
+            ),
+            const SizedBox(height: 24),
+            const _SectionLabel('课表'),
+            Card(
+              child: Column(
+                children: [
+                  _SettingsTile(
+                    icon: Icons.cloud_download_outlined,
+                    iconColor: const Color(0xFF4967D8),
+                    title: '教务导入',
+                    subtitle: '打开候选教务地址（首次进入会提示风险）',
+                    onTap: () => context.push('/import/login'),
+                  ),
                   const Padding(
                     padding: EdgeInsets.only(left: 64),
                     child: Divider(),
                   ),
                   _SettingsTile(
-                    icon: Icons.schedule_rounded,
-                    iconColor: const Color(0xFF4967D8),
-                    title: '提醒时间',
-                    subtitle: '课程开始前',
-                    trailing: DropdownButton<int>(
-                      value: reminder.minutesBefore,
-                      underline: const SizedBox.shrink(),
-                      items: notificationMinuteOptions
-                          .map(
-                            (minutes) => DropdownMenuItem(
-                              value: minutes,
-                              child: Text('$minutes 分钟'),
+                    icon: Icons.calendar_month_outlined,
+                    iconColor: const Color(0xFF28A184),
+                    title: '学期设置',
+                    subtitle: semester == null
+                        ? '正在初始化…'
+                        : '${semester.name} · ${semester.totalWeeks} 周\n开学周一 ${_date(semester.firstWeekMonday)}',
+                    onTap: semester == null
+                        ? null
+                        : () => showDialog<void>(
+                            context: context,
+                            builder: (context) => _SemesterDialog(
+                              initial: semester,
+                              onSave: ref.read(databaseProvider).upsertSemester,
                             ),
-                          )
-                          .toList(),
-                      onChanged: reminderLoading
-                          ? null
-                          : (value) {
-                              if (value != null) {
-                                _setNotificationMinutes(ref, value);
-                              }
-                            },
-                    ),
+                          ),
                   ),
                 ],
-                const Padding(
-                  padding: EdgeInsets.only(left: 64),
-                  child: Divider(),
-                ),
-                const _SettingsTile(
-                  icon: Icons.shield_outlined,
-                  iconColor: Color(0xFF7A67C7),
-                  title: '隐私说明',
-                  subtitle: '不保存教务密码，课程数据仅存本机',
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          const _SectionLabel('数据管理'),
-          Card(
-            child: _SettingsTile(
-              icon: Icons.delete_sweep_outlined,
-              iconColor: Theme.of(context).colorScheme.error,
-              title: '清空当前学期课程',
-              subtitle: '同时删除手动与教务导入的课程',
-              titleColor: Theme.of(context).colorScheme.error,
-              onTap: semester == null
-                  ? null
-                  : () => _clearSemester(context, ref, semester),
+            const SizedBox(height: 24),
+            const _SectionLabel('偏好与隐私'),
+            Card(
+              child: Column(
+                children: [
+                  _SettingsTile(
+                    icon: reminder.enabled
+                        ? Icons.notifications_active_rounded
+                        : Icons.notifications_none_rounded,
+                    iconColor: const Color(0xFFF09A4B),
+                    title: '上课提醒',
+                    subtitle: reminder.enabled
+                        ? '已开启 · 提前 ${reminder.minutesBefore} 分钟'
+                        : '已关闭 · 默认提前 15 分钟',
+                    trailing: Switch(
+                      value: reminder.enabled,
+                      onChanged: reminderLoading
+                          ? null
+                          : (value) =>
+                                _setNotificationEnabled(context, ref, value),
+                    ),
+                  ),
+                  if (reminder.enabled) ...[
+                    const Padding(
+                      padding: EdgeInsets.only(left: 64),
+                      child: Divider(),
+                    ),
+                    _SettingsTile(
+                      icon: Icons.schedule_rounded,
+                      iconColor: const Color(0xFF4967D8),
+                      title: '提醒时间',
+                      subtitle: '课程开始前',
+                      trailing: DropdownButton<int>(
+                        value: reminder.minutesBefore,
+                        underline: const SizedBox.shrink(),
+                        items: notificationMinuteOptions
+                            .map(
+                              (minutes) => DropdownMenuItem(
+                                value: minutes,
+                                child: Text('$minutes 分钟'),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: reminderLoading
+                            ? null
+                            : (value) {
+                                if (value != null) {
+                                  _setNotificationMinutes(ref, value);
+                                }
+                              },
+                      ),
+                    ),
+                  ],
+                  const Padding(
+                    padding: EdgeInsets.only(left: 64),
+                    child: Divider(),
+                  ),
+                  const _SettingsTile(
+                    icon: Icons.shield_outlined,
+                    iconColor: Color(0xFF7A67C7),
+                    title: '隐私说明',
+                    subtitle: '不保存教务密码，课程数据仅存本机',
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            const _SectionLabel('数据管理'),
+            Card(
+              child: _SettingsTile(
+                icon: Icons.delete_sweep_outlined,
+                iconColor: Theme.of(context).colorScheme.error,
+                title: '清空当前学期课程',
+                subtitle: '同时删除手动与教务导入的课程',
+                titleColor: Theme.of(context).colorScheme.error,
+                onTap: semester == null
+                    ? null
+                    : () => _clearSemester(context, ref, semester),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -270,15 +341,101 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
-    child: Text(
-      label,
-      style: TextStyle(
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-        fontSize: 13,
-        fontWeight: FontWeight.w700,
-      ),
+    child: Row(
+      children: [
+        Container(
+          width: 7,
+          height: 18,
+          decoration: BoxDecoration(
+            color: AppPalette.coral,
+            borderRadius: BorderRadius.circular(99),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ],
     ),
   );
+}
+
+class _ThemeSelector extends StatelessWidget {
+  const _ThemeSelector({required this.value, required this.onChanged});
+
+  final ThemePreference value;
+  final ValueChanged<ThemePreference> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Row(
+      children: ThemePreference.values.map((preference) {
+        final selected = preference == value;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: preference == ThemePreference.dark ? 0 : 6,
+            ),
+            child: Semantics(
+              selected: selected,
+              button: true,
+              label: '${preference.label}主题',
+              child: InkWell(
+                key: ValueKey('theme-${preference.storageValue}'),
+                borderRadius: BorderRadius.circular(16),
+                onTap: () => onChanged(preference),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? scheme.primaryContainer
+                        : scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: selected
+                          ? scheme.primary.withValues(alpha: 0.55)
+                          : Colors.transparent,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        preference.icon,
+                        size: 21,
+                        color: selected
+                            ? scheme.onPrimaryContainer
+                            : scheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        preference.label,
+                        maxLines: 1,
+                        style: TextStyle(
+                          color: selected
+                              ? scheme.onPrimaryContainer
+                              : scheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
 }
 
 class _SettingsTile extends StatelessWidget {

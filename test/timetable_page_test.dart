@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ncpu_timetable/app.dart';
 import 'package:ncpu_timetable/core/database/app_database.dart';
+import 'package:ncpu_timetable/core/theme/app_palette.dart';
+import 'package:ncpu_timetable/core/theme/course_colors.dart';
 import 'package:ncpu_timetable/features/timetable/providers/timetable_providers.dart';
 import 'package:ncpu_timetable/models/course.dart';
 import 'package:ncpu_timetable/models/semester.dart';
@@ -90,6 +92,22 @@ void main() {
     final database = await _pumpAppWithSemester(tester, _thisMonday());
 
     expect(find.textContaining('点此更新学期设置'), findsNothing);
+
+    await _disposeApp(tester, database);
+  });
+
+  testWidgets('今日无课时提供整周、新增与导入快捷入口', (tester) async {
+    final database = await _pumpAppWithSemester(tester, _thisMonday());
+
+    expect(find.byKey(const ValueKey('empty-quick-actions')), findsOneWidget);
+    expect(find.text('查看整周'), findsOneWidget);
+    expect(find.text('新增课程'), findsOneWidget);
+    expect(find.text('教务导入'), findsOneWidget);
+
+    await tester.tap(find.text('查看整周'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('today-schedule')), findsNothing);
+    expect(find.text('本周暂无课程'), findsOneWidget);
 
     await _disposeApp(tester, database);
   });
@@ -231,6 +249,25 @@ void main() {
       find.descendant(of: laterHalf, matching: find.text('晚上课程')),
       findsOneWidget,
     );
+    final courseCardFinder = find.byKey(
+      const ValueKey('week-course-card-morning-course'),
+    );
+    final courseCard = tester.widget<Container>(courseCardFinder);
+    final cardDecoration = courseCard.decoration! as BoxDecoration;
+    final cardRadius = cardDecoration.borderRadius! as BorderRadius;
+    expect(cardRadius.topLeft, cardRadius.topRight);
+    final cardInk = tester.widget<Ink>(
+      find.descendant(of: courseCardFinder, matching: find.byType(Ink)),
+    );
+    final cardGradient = (cardInk.decoration! as BoxDecoration).gradient!;
+    expect(
+      (cardGradient as LinearGradient).colors,
+      courseGradientColors(courseColorFor(1), strength: 0.62),
+    );
+    final sectionBadge = tester.widget<Container>(
+      find.byKey(const ValueKey('week-course-section-morning-course')),
+    );
+    expect((sectionBadge.decoration! as BoxDecoration).color, AppPalette.sun);
     expect(
       find.descendant(of: morningHalf, matching: find.byType(Scrollable)),
       findsNothing,

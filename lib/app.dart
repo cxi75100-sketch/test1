@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_preference.dart';
+import 'core/theme/theme_preference_provider.dart';
 import 'features/notifications/providers/notification_providers.dart';
 import 'features/widget/providers/widget_sync_providers.dart';
 
@@ -44,11 +46,15 @@ class _TimetableAppState extends ConsumerState<TimetableApp>
     ref.watch(widgetSyncProvider);
     // 持续监听课表与提醒偏好，数据变化时重建未来通知。
     ref.watch(notificationCoordinatorProvider);
+    final themePreference =
+        ref.watch(themePreferenceProvider).value ?? ThemePreference.system;
 
     return MaterialApp.router(
       title: '南工课表',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themePreference.themeMode,
       routerConfig: appRouter,
     );
   }

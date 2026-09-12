@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_palette.dart';
+
 /// 课程卡片与桌面小组件共用的课程配色表。
 ///
 /// 桌面小组件需要把课程颜色推送给 Android 原生侧，因此该常量放在 core/theme，
@@ -18,6 +20,15 @@ const courseColors = <Color>[
 /// 与课表 UI 完全一致的取色规则。
 Color courseColorFor(int colorKey) =>
     courseColors[colorKey.abs() % courseColors.length];
+
+/// 课程详情与课表标签共用的深色渐变。
+///
+/// 窄课表会在同一屏出现多张卡，因此用较低的 [strength] 保留辨色度，
+/// 同时压低大面积高饱和颜色，减少连续查看时的视觉疲劳。
+List<Color> courseGradientColors(Color accent, {double strength = 0.82}) => [
+  AppPalette.ink,
+  Color.lerp(AppPalette.ink, accent, strength)!,
+];
 
 /// 由课程名生成稳定取色键：同名课程（手动添加或教务导入）永远同色。
 int courseColorKeyForName(String name) =>
