@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-12 - Agent（TASK-049 修复 release 包无法联网）
+
+Fixed:
+- `android/app/src/main/AndroidManifest.xml` 补 `android.permission.INTERNET`。Flutter 模板只在 `src/debug` 与 `src/profile` 的清单里声明它，release 构建不合并这两个清单，导致 release 包内 WebView 无法联网、教务页面一直转圈（ISSUE-015）。**该缺陷影响全部 release 产物，包括已打 tag 的 `v1.0.0`。**
+- 版本号 `1.0.0+1` → `1.0.1+2`，重新出包；`v1.0.0` 标记保留但产物作废，不得分发。
+
+Validation:
+- `CONFIRMED` `aapt2 dump permissions`：修复后三个分 ABI APK 均含 `android.permission.INTERNET`，`versionName=1.0.1`，证书仍为正式证书（`2e8ac142…`）。对照：修复前 `app-arm64-v8a-release.apk` 无该权限，而 `app-debug.apk` 有。
+- `CONFIRMED` AVD `ncpu_api36`：`install -r` 覆盖升级 4001 → 4002 成功，`dumpsys package` 显示 `android.permission.INTERNET: granted=true`；冷启动 `Status: ok` / 1008 ms。
+- `CONFIRMED` 端到端：设置 → 教务导入 → 风险确认 → 继续，**教务登录页完整渲染**（「南昌工学院教学综合信息服务平台」用户名/密码/登录表单），logcat 无 `ERR_*`、无权限拒绝。临时截图已删除。
+- `CONFIRMED` `flutter analyze` 无问题、`flutter test` 132/132。
+
+Note:
+- 同轮发现 ISSUE-016（学期开学日随时区漂移一天），本轮只定位记录，未修，与 TASK-047 阶段 0–1 合并处理。
+- 教训：release 验证不能只覆盖"能启动"。已在 `knowledge/release.md` 固化为必查清单，网络功能必须实测。
+
 ## 2026-09-12 - Agent（TASK-045 release 签名与分 ABI 打包）
 
 Added:

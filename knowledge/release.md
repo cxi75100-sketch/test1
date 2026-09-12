@@ -28,15 +28,17 @@
 flutter build apk --release --split-per-abi
 ```
 
-`CONFIRMED`（2026-09-12，耗时 172.8 s）：
+`CONFIRMED`（2026-09-12，v1.0.1 修复版，耗时 104.0 s）：
 
-| 产物 | 大小 | SHA-256 |
-| --- | --- | --- |
-| `app-arm64-v8a-release.apk` | 22,184,816 B（21.2 MB） | `aba6f19ea6c048541f041a018caaad52db6354c9e2edfa981418726ce8c7b4b4` |
-| `app-armeabi-v7a-release.apk` | 19,610,292 B（18.7 MB） | `a5c5e7fdbd9426054d542c94c2d12aa5e209c1fbbef3d860eb59dca65db4daa1` |
-| `app-x86_64-release.apk` | 23,636,548 B（22.5 MB） | `8ef7b6fd6cb3f578d233bfaa47e61f0fd2ed5e4335087f33e8b92ddcad35bf0f` |
+| 产物 | 大小 | versionCode | SHA-256 |
+| --- | --- | --- | --- |
+| `app-arm64-v8a-release.apk` | 22,184,832 B（21.2 MB） | 2002 | `5f9bbdb081609adc9ed407f2cea2684354f7921163c7d4fe2b73385394089c6d` |
+| `app-armeabi-v7a-release.apk` | 19,610,312 B（18.7 MB） | 1002 | `a170a2de24d601ac96d7716ed0f2348a143550668f3bc0ca2f30cde26b05b313` |
+| `app-x86_64-release.apk` | 23,636,564 B（22.5 MB） | 4002 | `a75f647969f3343f973930655b347be1429e9844a66272b7a7c8f8a72934b6f4` |
 
 对照：Debug fat APK 为 207,598,993 B。
+
+> ⚠️ **v1.0.0 的产物已作废，不得分发。** 那一版缺 `INTERNET` 权限，教务导入完全不可用，详见 ISSUE-015。tag `v1.0.0` 保留作为问题标记，实际发布用 `v1.0.1`。
 
 说明：
 
@@ -46,7 +48,18 @@ flutter build apk --release --split-per-abi
 
 ## 验证
 
-`CONFIRMED`（2026-09-12，AVD `ncpu_api36` / API 36 / x86_64）：
+### 必查清单（每次出 release 包都要走一遍）
+
+只验证"能启动、界面正常、日志干净"是**不够的** —— v1.0.0 就是这样漏掉了 `INTERNET` 权限缺失（ISSUE-015）。固定检查项：
+
+1. `aapt2 dump permissions <apk>` —— 确认 `INTERNET` 存在；新增任何权限都按需核对。
+2. `apksigner verify --print-certs` —— 确认是正式证书而不是 debug 证书。
+3. `dumpsys package` —— 确认 `flags=0x0`（非 debuggable）、版本号正确。
+4. 冷启动 + 语义树 —— 确认主界面渲染。
+5. **依赖网络的功能必须实测**：教务导入页能真正打开登录页（这是 v1.0.0 漏掉的一项）。
+6. 通知与小组件 —— 在 release 包上各走一遍（分组权限、cleartext 白名单、receiver 都只在 release 才暴露问题）。
+
+### v1.0.0 已验证项（AVD `ncpu_api36` / API 36 / x86_64，2026-09-12）
 
 - `apksigner verify --print-certs`：三个 APK 证书 DN 与 SHA-256 一致，均为正式证书，非 debug 证书。
 - 安装：换签名**必须先卸载**（`INSTALL_FAILED_UPDATE_INCOMPATIBLE`），`adb uninstall` 后 `adb install` 成功。

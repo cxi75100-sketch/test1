@@ -1,5 +1,50 @@
 # Issues
 
+## ISSUE-016 学期开学日随时区漂移一天（日期被当作时间点存储）
+
+Status: Open（已定位，未修）
+
+Observed: 2026-09-12，模拟器时区为 `GMT` 时，设置页显示「开学周一 2026-08-30」；把模拟器时区改回 `Asia/Shanghai` 并**重启 App** 后显示恢复为「2026-08-31」。同一次冷启动期间改时区不生效，需要重启进程重新读库。
+
+Root Cause: `Semester.firstWeekMonday` 语义上是**本地日历日期**，但 `DateTimeColumn` 用 Drift 默认的 `DriftSqlType.dateTime` 存储，即 epoch 整数（UTC 时间点）；读出时再按设备当前时区换算回本地时间。写入与读取时区一致则正常往返；**时区一变，本地日期就整体偏移一天**。
+
+`CONFIRMED` 证据：`lib/core/database/app_database.g.dart:34-41` 为 `DriftSqlType.dateTime`（未启用 `storeDateTimeValuesAsText`）；上机的时区切换对照实验复现了 08-30 ↔ 08-31 的翻转。参考数据点：`2026-08-31` 确为周一（`2026-09-12` 周六往回推 12 天），默认常量 `officialFirstWeekMonday` 无误。
+
+Impact: `INFERRED`（未逐项实测）—— 一旦设备时区与学期写入时不同：
+
+- 开学周一显示错一天。
+- 周次边界附近（周一/周日）可能算成相邻一周；`currentWeek`、`termStatus`、周日期条、小组件日期、通知排程都建立在同一日期换算之上。
+- 出国、时区自动切换、跨时区设备都可能触发。
+
+Not impact: 国内用户且时区始终为 `Asia/Shanghai` 时观察不到；通知侧另有硬编码 `Asia/Shanghai`（见 `notifications.md`），部分掩盖了该问题但掩盖得不完整（UI 与小组件走的是设备时区）。
+
+Possible Solution: 把日期语义与时间点语义分开——`firstWeekMonday` 改用文本存储（`storeDateTimeValuesAsText`）或直接在存取路径上归一化为 `dateOnly`；并为「设备时区变化」补一条回归测试。需评估对既有数据库的迁移（老数据是 epoch，迁移时按写入时区解释会有歧义，须先备份）。
+
+Next Step: 与多校计划的 `TermCalendar` 重构（TASK-047 阶段 0–1）合并处理，避免同一处代码改两次。当前不阻塞发布：国内使用场景不受影响。
+
+## ISSUE-015 Release 包缺少 INTERNET 权限，教务 WebView 一直转圈
+
+Status: Fixed（2026-09-12，模拟器已验证，真机待验）
+
+Observed: 2026-09-12，用户安装 release 编译的对照包后，App 内打开教务系统网址一直加载不出来；同一台手机上此前安装的 Debug 包一切正常。
+
+Root Cause: `android/app/src/main/AndroidManifest.xml` **从未声明 `INTERNET` 权限**。Flutter 模板只把它写在 `android/app/src/debug/AndroidManifest.xml` 与 `profile/AndroidManifest.xml` 里（注释说明是给 hot reload / VM service 用的），而 release 构建不合并这两个清单。因此：
+
+- Debug / Profile 包 → 有 `INTERNET` → 教务 WebView 正常。
+- Release 包 → 无 `INTERNET` → WebView 无法发起任何请求，表现为页面一直加载。
+
+`CONFIRMED` 证据：`aapt2 dump permissions` 显示 `app-debug.apk` 有 `android.permission.INTERNET`，而 `app-arm64-v8a-release.apk` 没有。同时本机 `curl http://jwxt.ncpu.edu.cn:8088/jwglxt` 返回 HTTP 302，证明网络与教务主机本身可达，问题在 App 侧。
+
+Impact: **影响全部 release 产物**，包括已打 tag `v1.0.0` 的三个分 ABI APK。若按原计划发到 Gitee 发行版，所有下载者拿到的都是"能装、能看课表、但无法导入教务"的包。因为教导入是核心功能，这属于发布阻断级缺陷。
+
+为什么此前没被发现：TASK-045 的 release 验证只覆盖了启动、界面渲染、日志与权限静态扫描，**没有覆盖依赖网络的功能**（教务导入）。教训：release 验证清单必须包含一次真实网络路径。
+
+Resolution: 在 `main/AndroidManifest.xml` 顶部补 `<uses-permission android:name="android.permission.INTERNET" />`；版本号升到 `1.0.1+2` 重新出包。`CONFIRMED` 新产物 `aapt2 dump permissions` 三个分 ABI APK 均含 `INTERNET`，`versionName=1.0.1`，证书仍为正式证书。tag `v1.0.0` 保留不动（标记那个坏构建，未发布过），修复版另打 `v1.0.1`。
+
+Next Step: `CONFIRMED`（2026-09-12，AVD `ncpu_api36`）修复已在 release 包上端到端验证：覆盖安装后 `dumpsys package` 显示 `android.permission.INTERNET: granted=true`，进入「设置 → 教务导入 → 我已了解风险，继续打开」后，**教务登录页完整渲染**（「南昌工学院教学综合信息服务平台」+ 用户名/密码/登录表单），logcat 无 `ERR_*` 或权限拒绝。剩余：真机复验一次（TASK-049）。已发布的 `v1.0.0` 产物**不得分发**。
+
+Lesson: 与 ISSUE-014 同源 —— 只验证"能启动"不足以证明 release 可用。分组权限、cleartext 白名单、WebView、通知、小组件都必须在 release 包上单独走一遍。
+
 ## ISSUE-014 本地上课提醒真机行为待验收
 
 Status: Open（代码与构建已完成，真机行为未验证）
