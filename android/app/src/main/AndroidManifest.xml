@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 教务 WebView 需要联网。Flutter 模板只在 src/debug 与 src/profile 的清单里声明
+         INTERNET，release 构建不会合并它们，缺了这条 release 包打开教务页面会一直转圈。 -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
