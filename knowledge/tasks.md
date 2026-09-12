@@ -2,7 +2,7 @@
 
 ## Now
 
-- 无。
+- [ ] TASK-048 排查并优化 App 卡顿（2026-09-12 进行中）：用户报告把 Debug APK 装到手机上后有明显卡顿。已确认主因是 **Debug 构建本身**，不是代码：同一 AVD、同一份代码，冷启动 Debug 2739–3696 ms vs Release 937 ms；体积 Debug fat APK 198 MB vs Release arm64 21.2 MB。已产出 Debug 证书签名的 Release 包 `build/app/outputs/flutter-apk/app-release-arm64-debugkey.apk`（22.4 MB，原地覆盖升级不丢课表与登录态）供用户对照验证。**待用户回报结果**；若 Release 仍卡，下一步在真机用 `flutter run --profile` / `dumpsys gfxinfo` 量化掉帧，不靠猜。
 
 ## Next
 

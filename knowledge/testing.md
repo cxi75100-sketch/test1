@@ -175,3 +175,6 @@
 - **`flutter analyze` 突然报依赖符号 undefined 时先跑 `flutter pub get`，不要当成代码回归**（2026-09-12 踩到）：`.dart_tool/package_config.json` 停留在新增依赖之前（时间戳早于 pubspec 改动，条目数 120 而 pubspec.lock 更多），导致 `flutter_local_notifications` / `timezone` 的 import 报 `Target of URI doesn't exist`，并连带产生 17 个 `undefined_class` / `undefined_method` 错误，全部集中在未改动的 `notification_scheduler.dart`。执行 `flutter pub get` 后 `.dart_tool/package_config.json` 重建，`flutter analyze` 立即恢复 `No issues found`，`pubspec.lock` 无变化。
   - 判据：错误全部落在同一个未改动文件、且首个错误是 `uri_does_not_exist` 时，优先怀疑依赖未解析。
   - 本轮 Pub Cache 缺少 `flutter_local_notifications` 与 `timezone`，`pub get` 需要联网从 pub.dev 下载；离线环境下该错误无法自愈。
+- **Debug 与 Release 的性能差距远大于任何"打包优化"**（2026-09-12 实测，TASK-048）：同一 AVD、同一份代码，冷启动 Debug 2739–3696 ms vs Release 937 ms（约 3–4 倍）；体积 Debug fat APK 198 MB vs Release arm64 21.2 MB。原因：Debug 走 JIT 解释执行、保留断言与调试符号、不做字体图标裁剪、三个 ABI 全部打包。**用户报「卡顿」时先确认装的是不是 Release 包，再谈代码优化。**
+  - 需要一个**保持原签名、可原地覆盖升级**（不丢本地数据）的 Release 包做性能对照时：先把 `android/key.properties` 备份到仓库外，再临时移走它（`release` 会按 `build.gradle.kts` 回退到 `signingConfigs.debug`），执行 `flutter build apk --release --target-platform android-arm64`，**立即还原**。移走前必须备份：密码只存在于该文件，丢失则 keystore 不可用。
+  - `--target-platform android-arm64` 产出单个 APK（仅含少量其他 ABI 存根），**不是分包**；分包用 `--split-per-abi`，两者 versionCode 不同（分包会加 ABI 偏移，如 arm64 为 2001）。
