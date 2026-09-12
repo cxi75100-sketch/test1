@@ -334,13 +334,12 @@ Added:
 - `项目知识` NTFS Junction 指向 `D:\桌面\课程表\knowledge`，确保 Obsidian 与项目 Agent 阅读同一份知识文件。
 
 Changed:
-- 将原数模知识库的 `项目/南工课表.md` 移入新仓库 `历史/数模知识库旧索引.md`，并从数模知识库项目索引移除。
+- 将旧知识库中的「南工课表」页面迁入新仓库 `历史/` 目录，并从旧索引移除。
 - `.gitignore` 排除 Obsidian 本机工作区状态与 `项目知识` Junction，避免 Git 重复遍历同一批知识文件。
 
 Validation:
-- `CONFIRMED` Obsidian 配置注册表中同时存在两个独立 vault：`课表知识库` 与 `数模知识库`，路径互不包含。
+- `CONFIRMED` Obsidian 配置注册表已注册独立的 `课表知识库` vault。
 - `CONFIRMED` 新仓库 `.obsidian`、README、历史页和 `项目知识` Junction 均存在；Junction 目标为项目 `knowledge` 目录。
-- `CONFIRMED` 数模知识库内已无“南工课表/课程表/课表知识库”引用。
 
 ## 2026-09-10 - Agent（TASK-023 UI 重做）
 
@@ -360,7 +359,7 @@ Validation:
 
 Confirmed:
 - 用户真机脱敏采集确认南昌工学院使用正方教务；核心课表接口为 `POST /jwglxt/kbcx/xskbcx_cxXsgrkb.html?gnmkdm=N253508`，`kbList` 的星期/节次/周次/课程/场地等关键字段已确认。
-- Codex 中“课程表”是独立项目 `D:\桌面\课程表`；“数模”是另一项目 `D:\桌面\数模`。课程表状态不再同步到数模知识库。
+- 本目录是独立项目与独立 Git 仓库，课程表状态只在本仓库维护。
 
 Added:
 - Debug 同源 XHR/fetch 脱敏采集链路、采集页与自动保存；原始课表响应使用独立桥接并只留内存。
@@ -496,7 +495,7 @@ Changed:
 - `knowledge/tasks.md`：TASK-015 从 Now 移到 Done（含验收证据）；TASK-016 拆到新的 Blocked 节，明确等待条件；Now 变为空。
 - `knowledge/issues.md`：ISSUE-002 从 Open 改为 Partially Resolved（Android 已解决、iOS 保持 Open）并附完整 Resolution Evidence；ISSUE-003 补充 EncodedCommand 规避证据；新增 ISSUE-004 与 ISSUE-005。
 - `knowledge/testing.md`：Passed 段追加 `flutter doctor -v` Android toolchain 全绿 + APK 静态校验（apksigner v2 + aapt2 badging + 权限 + ABI + APK 结构）；Manual Testing 明确 BLOCKED 事实与复现命令；Tooling Note 补充 EncodedCommand、单引号 Windows 路径、setx 引号陷阱、磁盘占用等 5 条本轮经验。
-- Obsidian 项目页 `D:\桌面\数模\mcm2026\docs\数模知识库\项目\南工课表.md`：Android 工具链状态从 BLOCKED 改为 CONFIRMED；下一步从"完成 Android SDK 配置"改为"接入真机做 TASK-016 + 启动里程碑 2 业务开发"。
+- 同步更新本项目知识库中的 Android 工具链状态（BLOCKED → CONFIRMED）；下一步改为「接入真机做 TASK-016 + 启动里程碑 2 业务开发」。
 
 Fixed:
 - 首次 sdkmanager 调用因 bash 双反斜杠转义把组件写到 `D:\Toolsandroid-sdk\`；已合并回 `D:\Tools\android-sdk\` 并固化"单引号 Windows 路径"调用方式（详见 ISSUE-005）。

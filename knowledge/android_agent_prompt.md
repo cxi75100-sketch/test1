@@ -50,7 +50,6 @@ Flutter SDK：D:\Tools\flutter
 - D:\桌面\课程表\knowledge\issues.md
 - D:\桌面\课程表\knowledge\testing.md
 - D:\桌面\课程表\knowledge\changelog.md
-- D:\桌面\数模\mcm2026\docs\数模知识库\项目\南工课表.md
 
 TASK-015 只有在 Android toolchain 通过且 Debug APK 构建成功后才能移入 Done。TASK-016 只有真实设备/模拟器运行通过后才能完成。最后向用户报告：安装了什么、准确路径、每项验证结果、APK 路径、未验证项和下一步。
 ```

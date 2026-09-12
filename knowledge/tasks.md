@@ -86,11 +86,11 @@
 
 - [x] TASK-016 Android 真机基础验收（2026-09-10 完成）：设备识别、APK 覆盖安装、冷启动、跨进程 SQLite 持久化、首页渲染、崩溃日志与包信息均已验证；教务重新导入和主屏小组件交互分别由 TASK-021 / TASK-019 跟踪。
 
-- [x] TASK-024 新建独立 Obsidian“课表知识库”仓库（2026-09-10 完成）：仓库位于 `D:\桌面\课程表\课表知识库`，已生成 `.obsidian` 配置和入口 README；用 `项目知识` Junction 直接展示项目 `knowledge` 原文件，避免双份文档漂移；原数模知识库的“南工课表”页面已迁入新仓库历史目录，并从数模项目索引移除。Obsidian 注册表确认“课表知识库”和“数模知识库”为两个独立 vault。
+- [x] TASK-024 新建独立 Obsidian“课表知识库”仓库（2026-09-10 完成）：仓库位于 `D:\桌面\课程表\课表知识库`，已生成 `.obsidian` 配置和入口 README；用 `项目知识` Junction 直接展示项目 `knowledge` 原文件，避免双份文档漂移；旧知识库中的「南工课表」页面已迁入新仓库历史目录。Obsidian 注册表确认 `课表知识库` 为独立 vault。
 
 - [x] TASK-023 统一 App 视觉并重做核心课表 UI（2026-09-10 完成）：用移动端纵向日程替换五列压缩表格，补齐周六/周日；新增周概览、七天日期条、按天分组课程卡片，卡片展示节次/教室/教师；统一 Material 3 主题、输入框、按钮、空状态、错误状态、设置页分组卡片与课程详情页。保持数据、导入和桌面小组件逻辑不变。`flutter analyze` 无问题，`flutter test` 78/78；已生成 412×915 Flutter 渲染预览检查布局，真机视觉仍待设备验收。
 
-- [x] TASK-020 核对本地实现并收口知识库（2026-09-10 完成）：确认 Codex 中“课程表”项目路径为 `D:\桌面\课程表`、Git 仓库独立于“数模”项目 `D:\桌面\数模`；按当前源码修正 README、当前状态、任务、架构、导入、测试、问题与变更日志中的过期描述。重新验证 `flutter analyze` 无问题、`flutter test` 77/77、`gradlew :app:testDebugUnitTest` 13/13；当前无 Android 设备，真机验收单列为 TASK-021/TASK-019/TASK-016。
+- [x] TASK-020 核对本地实现并收口知识库（2026-09-10 完成）：确认本项目路径为 `D:\桌面\课程表` 且 Git 仓库独立；按当前源码修正 README、当前状态、任务、架构、导入、测试、问题与变更日志中的过期描述。重新验证 `flutter analyze` 无问题、`flutter test` 77/77、`gradlew :app:testDebugUnitTest` 13/13；当前无 Android 设备，真机验收单列为 TASK-021/TASK-019/TASK-016。
 
 - [x] TASK-013 基于真实响应实现 parser 和导入预览（2026-09-10 代码完成）：`NcpuTimetableParser` 按 key 解析 `kbList` 的课程名、星期、节次、周次、教室、教师、学分与课程性质，忽略 `xsxx` 身份字段；`NcpuAdapter.parseTimetable` 返回 sealed 结果；WebView 内存接收课表原始响应，预览确认后 `replaceImportedCourses` 只替换 `ncpu` 来源课程。解析器/适配器自动测试通过；真机端到端验收转 TASK-021。
 

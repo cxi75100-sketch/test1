@@ -66,4 +66,4 @@ Drift 代码生成使用：
 - 不修改教务系统接口、不添加登录绕过、不接触用户凭证。
 - 仅在构建确有需要时小范围修改 Android 配置，并记录原因与验证证据。
 - 结束前更新 `knowledge/current_state.md`、`knowledge/tasks.md`、`knowledge/issues.md`、`knowledge/testing.md`、`knowledge/changelog.md`。
-- 同步更新 Obsidian 项目页：`D:\桌面\数模\mcm2026\docs\数模知识库\项目\南工课表.md`。
+- 同步更新本项目知识库（`knowledge/` 下各文档）。

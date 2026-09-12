@@ -6,11 +6,9 @@
 
 ## Project Boundary
 
-- `CONFIRMED`：Codex 中“课程表”是独立项目，根目录为 `D:\桌面\课程表`，且该目录是独立 Git 仓库。
+- `CONFIRMED`：本目录是独立 Git 仓库，根目录为 `D:\桌面\课程表`。
 - `CONFIRMED`：Obsidian 中已新建独立仓库“课表知识库”，路径为 `D:\桌面\课程表\课表知识库`；其中 `项目知识` Junction 直连项目的 `knowledge` 目录。
-- `CONFIRMED`：“数模”是另一个 Codex 项目，根目录为 `D:\桌面\数模`。
-- 原 `数模知识库/项目/南工课表.md` 已迁入新仓库的 `历史/数模知识库旧索引.md`，数模项目索引中的链接已移除。
-- 本知识库只记录南工课表 App；不得再把状态同步到数模知识库或数模项目页。
+- 本知识库只记录南工课表 App。
 
 ## Current Milestone
 
