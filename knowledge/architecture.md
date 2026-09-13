@@ -84,7 +84,7 @@ widget/
 
 ## Data Flow
 
-页面 → Riverpod provider/controller → repository → Drift database → SQLite。课表首页在页面内维护“今日 / 整周”展示状态，两栏共享 `visibleCoursesProvider`：今日按设备星期过滤当前教学周并按节次排序；整周按星期生成七个横向列，每列把 `startSection <= 4` 放入等高的上午半区，其余课程（含 9-10 节）放入“下午 / 晚间”半区。半区内继续按节次断点 `[2, 4]` 与 `[6, 8, 10]` 生成固定等高格，课程按开始节次落格，使用普通 `Column + Expanded` 一次渲染而不嵌套纵向滚动；仅改变展示分组，不复制或修改课程。切回今日时通过既有 `SelectedWeek.goToCurrent()` 回到当前教学周，不新增数据接口。
+页面 → Riverpod provider/controller → repository → Drift database → SQLite。课表首页在页面内维护“今日 / 整周”展示状态，两栏共享 `visibleCoursesProvider`：今日按设备星期过滤当前教学周并按节次排序；整周生成七个横向列，当前教学周从设备当天开始循环排列七天，其他周保持周一到周日；并在列表上方渲染一条七日「线路」概览条（`_WeekRouteStrip`，每天一个站点与课程数，点击把对应日列滚到视口左侧并同步高亮）。首屏宽度固定为两列完整可见并露出第三列边缘。每列把 `startSection <= 4` 放入等高的上午半区，其余课程（含 9-10 节）放入“下午 / 晚间”半区；半区内按节次断点 `[2, 4]` 与 `[6, 8, 10]` 生成固定等高格，不嵌套纵向滚动。该排序仅改变展示顺序，不复制或修改课程。
 
 教务导入：风险确认 → 受限 WebView 自行登录 → 打开学生课表查询 → 同源脚本把课表响应送入内存 → `SchoolAdapter.parseTimetable` → `diffImportedCourses` 与上次导入比对 → 预览（含新增/移除）→ 用户确认 → `replaceImportedCourses` → 离开页面时 `ImportSessionCleaner` 清 HTTP 缓存并清空内存响应。适配器不接收 Cookie 或其他凭证；原始响应不落盘，学校原始字段不得进入 UI。
 
@@ -111,7 +111,8 @@ widget/
 ## Theme and Visual System
 
 - `MaterialApp.router` 同时挂载 `AppTheme.light`、`AppTheme.dark` 与数据库驱动的 `ThemeMode`。设置键 `theme_mode` 取 `system` / `light` / `dark`，缺失或非法值回退为 `system`，不新增数据库 schema。
-- 页面背景由 `AmbientBackground` 提供：日间为暖白到低饱和蓝灰的纵向渐变，夜间为深蓝灰双层渐变；只绘制两个低透明径向环境光，不再使用重复纸张网格、圆点或实时模糊。
-- 卡片表面、边界、正文与弱信息使用 `ColorScheme` 语义色；海军蓝信息板、亮黄节次章、珊瑚/薄荷装饰和课程渐变作为品牌色保留固定对比关系。
+- 页面背景由 `AmbientBackground` 提供：日间为冷白到低饱和蓝灰的纵向渐变，夜间为深灰蓝渐变；另有静态 `CustomPainter` 绘制的两条低对比线路曲线与落在曲线上的站点。不使用径向环境光斑、重复纹理、圆点阵或实时模糊。
+- 课程色只有两种用法，集中在 `course_colors.dart`：`courseSurfaceTint()` 把课程色按明暗两档低透明度混进基础表面（今日列表卡、整周窄课卡、课程详情头卡共用），`courseBadgeTint()` 给出节次签的淡色底。不再有「海军蓝铺底 + 亮黄章」这类固定组合，也不为大面积课程卡做高饱和渐变。
+- 卡片表面、边界、正文与弱信息使用 `ColorScheme` 语义色；`AppPalette` 只保留中性纸面、夜间分层、品牌蓝与珊瑚装饰，其中 `ink` 是日间正文色（等于 `onSurface`）而不再是品牌深蓝。
 - 状态栏与系统导航栏图标亮度由明暗主题分别配置，避免浅底白图标或深底黑图标。
-- 当前已实画验证首页、整周、详情和设置；课程表单、导入风险门与导入预览的夜间逐页视觉仍待后续验收，详见 `report_2026-09-13_ui_theme_and_next_plan.md`。
+- 当前已实画验证首页、整周、课程详情、设置与新增课程表单的日间与夜间；导入风险门与导入预览的夜间逐页视觉仍待后续验收，详见 `report_2026-09-13_ui_theme_and_next_plan.md`。

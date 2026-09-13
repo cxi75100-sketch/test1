@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-09-13 - Agent（TASK-062 收口：把「线路」语言铺满全 App）
+
+Added:
+- `knowledge/report_2026-09-13_task062_route_language.md`：TASK-062 重做报告（设计语言定义、改动清单、遗留问题对照、验证证据、数据边界与后续建议），并登记进 `knowledge/README.md` 索引。
+
+Changed:
+- 新增课程色统一入口 `courseSurfaceTint()` / `courseBadgeTint()`：今日列表卡、整周窄课卡、课程详情头卡共用同一组低饱和系数，删除只服务详情页的 `courseGradientColors()`。
+- 今日列表卡重做为整周窄卡的宽版：低饱和课程面 + 淡色节次签 + 右对齐上课时间 + 教室/教师图标信息；圆角由硬编码 20 改为与主题 `cardTheme` 一致的 16；**移除海军蓝药丸与亮黄节次章**。
+- 课程详情头卡去掉深色高饱和渐变与亮黄章，改为同源课程面 + 淡色节次签 + 语义文字色，并新增「一天十站」节次线路（`_SectionRoute`），把课程占用的节次画成实心站点；十个站点直接取自 `officialSectionTimes`，不新增常量。
+- 设置页身份卡由海军蓝渐变板 + 亮黄校徽 + 薄荷徽章改为中性表面 + 蓝色焦点，并抽成 `_SchoolIdentityCard`。
+- `AmbientBackground` 移除两处径向环境光斑，只留纵向渐变与两条低对比线路水印（曲线 + 落在曲线上的站点）。
+- 空日列不再画整列卡片：只保留两条极淡列轨，「沿线无课」标签从半区正中移到线路上端。
+- 「今日 / 整周」切换按钮固定 48dp 触控高度（原约 41dp），指示条压在底边。
+- `AppPalette` 文档修正：`ink` 现在是日间正文色（等于 `onSurface`），不再是品牌深蓝；课程色一律用 `courseSurfaceTint` 混合，不再出现在固定色板里。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题；`flutter test` **140/140**（新增 4 项：今日卡同源课程面与淡色节签、切换按钮 48dp 触控、空日列不画卡片且标签贴顶、详情页十站线路与节次落点）。
+- `CONFIRMED` Release 构建（33.1 s，正式证书 `2e8ac142…`）经 `adb install -r` 覆盖安装到 `ncpu_api36`，冷启动 `ok` / COLD / 760 ms；1080×2400 实画复核日间与夜间的首页、整周、详情、设置，并用临时课 `ZZ-Card-Check` 验证今日卡与编辑表单后删除，课程数回到 13。
+- `CONFIRMED` 全程 logcat 无 `FATAL EXCEPTION` / `RenderFlex overflowed` / `MissingPluginException`，无崩溃或 ANR，按 pid 过滤会话字段 0 命中。外观还原为「跟随系统」、系统夜间 `no`。
+- Observed（本轮未处理）：`dart format --set-exit-if-changed lib test` 在当前 Flutter/Dart 下会改写 11 个与本次无关的既有文件（`import/` 下的适配器、策略与若干测试），判断为格式化器版本升级带来的存量差异，**已把这 11 个文件恢复原状**，不在本次改动里顺手格式化。
+- `UNVERIFIED`：OnePlus 真机未安装本包；总体视觉认可仍由 TASK-055 跟踪。
+
+## 2026-09-13 - Agent（TASK-062 候选版在模拟器完成技术验收）
+
+Validated（模拟器 `ncpu_api36` / API 36 / x86_64，1080×2400）：
+- `flutter analyze`（`R:\`）No issues found；`flutter test` 136/136。
+- 用当前工作区代码构建正式签名 Release（`flutter build apk --release --target-platform android-x64`，证书 SHA-256 `2e8ac142…`，`versionCode=3`），`adb install -r` 覆盖 v1.0.2 且**保留本机数据**（13 条课程、学期 2026-08-31 / 20 周）。
+- 冷启动 `Status: ok` / `LaunchState: COLD` / 915 ms；整轮验证中 App 进程 pid 3714 未变化，logcat 无 `FATAL EXCEPTION`、`RenderFlex overflowed`、`MissingPluginException`；按 pid 过滤会话类字段命中 0。
+- 实画与交互核对：日间/夜间首页、整周、课程详情、设置、新增课程表单；「今日 / 整周」切换、路线图点击定位（点周三后该列对齐左侧且站点高亮）、上一周 / 本周 / 下一周、横滑到周六、新增与删除课程均正常；删除临时课后课程数回到 13。
+
+Observed（本轮未修）：
+- **视觉语言只换了一半**：整周课程卡已改为低饱和柔光面 + 淡色节次签，但「今日」列表 `CourseCard` 与课程详情页仍保留海军蓝药丸 + 亮黄节次章（`AppPalette.ink` / `AppPalette.sun`），设置页头部同样沿用旧语言；`courseGradientColors()` 现在只被详情页调用。两个栏目并排比较像两套设计。
+- `CourseCard` 圆角硬编码 20，而主题 `cardTheme` 已改为 16；`AppPalette.ink` 已从海军蓝 `0xFF18213D` 变为与新 `onSurface` 同值的 `0xFF1B2430`，品牌蓝身份被稀释。
+- 「今日 / 整周」切换按钮实测触控高度约 39 dp，低于验收约束要求的 48 dp（AppBar 图标按钮 48 dp、路线图站点约 65 dp 均达标）。
+- 一次无法归因的偶发现象：未发送任何输入时界面自行从「今日」变为「整周」。随后用同一组取证命令（`uiautomator dump` + `screencap`）连续重复 3 次均未复现，并已单独验证这两条命令本身不会触发点击，暂按一次性外部输入处理，保留观察。
+
+## 2026-09-13 - Agent（TASK-061 校园编辑日历重构）
+
+Changed:
+- 依据用户真机反馈、GitHub `frontend-design` 规范和开源课表的壁纸/玻璃层次原则，撤销大周次 Hero、卡片套卡片、高饱和深色渐变、亮黄章和当天粗边框；改用标题识别线、双曲背景轨道、`02` 周次编辑排版、半透明日列、低强度环境光、低饱和柔光课程面及侧边色条。
+- 整周由单日占满改为首屏完整两天并露出第三列；当前周从今天开始循环排列七天，今天无需手动横滑且其余六天不丢，其他周仍按周一到周日。
+- 页面背景从系统栏连续覆盖到底部，日间使用冷白灰、夜间使用深灰蓝，不再出现内容区与底部断层。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题，`flutter test` 136/136，正式签名 Release APK 覆盖安装成功。
+- `CONFIRMED` API 36 模拟器 1080×2400 夜间实画与 UIAutomator 验证：当天列位于最左、第二天完整可见、第三列有视觉提示；logcat 无布局溢出或致命异常。临时 ASCII 测试课已删除。
+- `UNVERIFIED` OnePlus 真机尚未安装本次新包，总体视觉认可仍由 TASK-055 跟踪。
+
 ## 2026-09-13 - Agent（TASK-060 v1.0.2 测试版发布）
 
 Added:
