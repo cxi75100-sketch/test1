@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  通知状态栏图标只被 Dart 代码按资源名引用（AndroidInitializationSettings
+  的 'ic_stat_school'），release 构建的资源压缩看不到这条引用会把它删掉，
+  于是插件在 initialize 阶段就抛 invalid_icon，表现为“开启提醒直接失败、
+  连通知权限弹窗都不出现”。用 tools:keep 显式保留，不要删除本文件。
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_school" />

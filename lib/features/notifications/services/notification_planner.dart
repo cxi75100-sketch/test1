@@ -5,6 +5,46 @@ import '../../../services/course_time_service.dart';
 
 const maxScheduledCourseNotifications = 480;
 
+/// 校园所在地的固定时区偏移（Asia/Shanghai 全年 UTC+8，无夏令时）。
+const campusUtcOffset = Duration(hours: 8);
+
+/// 校园挂钟时间，用来和课表里的挂钟时间（节次作息、学期日期）比较。
+///
+/// 课表里的时间是校园挂钟分量，判断“是否已过去”必须用同一个挂钟基准。
+/// 直接拿 `DateTime.now()`（设备本地时间）比较会在设备时区不是 UTC+8 时
+/// 判错：设备时区落后于校园时，当天已经上过的课会被当成未来，交给通知
+/// 插件时被 `scheduledDate` 校验拒绝；设备时区超前时，未来几小时的课
+/// 反而会被丢掉。
+///
+/// 返回值刻意构造成“设备本地时刻的挂钟分量 == 校园挂钟”，这样它与课表
+/// 时间的比较等价于纯挂钟比较，不依赖设备时区。
+DateTime campusWallClockNow() {
+  final campus = DateTime.now().toUtc().add(campusUtcOffset);
+  return DateTime(
+    campus.year,
+    campus.month,
+    campus.day,
+    campus.hour,
+    campus.minute,
+    campus.second,
+    campus.millisecond,
+    campus.microsecond,
+  );
+}
+
+/// 丢掉触发点已经过去的提醒。
+///
+/// 规划到真正排程之间可能跨过触发点，而通知插件对过去时间会抛异常；
+/// 排程实现是“先清空、再逐条排程”，单条过期就会把已有提醒全部抹掉，
+/// 因此排程前必须再挡一次。
+List<CourseReminder> futureReminders(
+  List<CourseReminder> reminders,
+  DateTime now,
+) => [
+  for (final reminder in reminders)
+    if (reminder.scheduledAt.isAfter(now)) reminder,
+];
+
 class CourseReminder {
   const CourseReminder({
     required this.id,

@@ -104,7 +104,9 @@ class LocalNotificationScheduler implements NotificationScheduler {
     final mode = exact
         ? AndroidScheduleMode.exactAllowWhileIdle
         : AndroidScheduleMode.inexactAllowWhileIdle;
-    for (final reminder in reminders) {
+    // 插件对过去的 scheduledDate 会抛异常，而上面已经清空了旧提醒，
+    // 所以过期项必须在进插件之前挡掉，否则整批排程都会被这次异常带走。
+    for (final reminder in futureReminders(reminders, campusWallClockNow())) {
       await _plugin.zonedSchedule(
         id: reminder.id,
         title: reminder.title,

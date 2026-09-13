@@ -99,6 +99,48 @@ void main() {
     expect(reminders, hasLength(1));
     expect(reminders.single.course.id, 'early');
   });
+
+  test('校园挂钟基准取 UTC+8 的挂钟分量，不随设备时区漂移', () {
+    final expected = DateTime.now().toUtc().add(campusUtcOffset);
+    final actual = campusWallClockNow();
+    // 两个 DateTime 的“时刻”基准不同（一个是设备本地、一个是 UTC），
+    // 只能比较挂钟分量；允许分钟边界上的一分钟误差。
+    int minutesOfDay(DateTime value) =>
+        value.day * 24 * 60 + value.hour * 60 + value.minute;
+    expect(
+      (minutesOfDay(actual) - minutesOfDay(expected)).abs(),
+      lessThanOrEqualTo(1),
+    );
+  });
+
+  test('排程前过滤掉触发点已过的提醒', () {
+    final reminders = planner.build(
+      semester: semester,
+      courses: [
+        _course(weeks: const [1, 2]),
+      ],
+      sectionTimes: sectionTimes,
+      now: DateTime(2026, 9, 6, 12),
+      minutesBefore: 15,
+    );
+    expect(reminders, hasLength(2));
+
+    expect(
+      futureReminders(reminders, DateTime(2026, 9, 7, 8, 4)),
+      hasLength(2),
+      reason: '两条都还没到触发点',
+    );
+    expect(
+      futureReminders(reminders, DateTime(2026, 9, 7, 8, 5)),
+      hasLength(1),
+      reason: '第一条恰好到点，不应再排',
+    );
+    expect(
+      futureReminders(reminders, DateTime(2026, 9, 14, 9)),
+      isEmpty,
+      reason: '全部过期时返回空，而不是把已过期的交给插件',
+    );
+  });
 }
 
 Course _course({

@@ -39,7 +39,9 @@ final notificationCoordinatorProvider = Provider<NotificationCoordinator>((
         semester: semester,
         courses: courses,
         sectionTimes: await database.allSectionTimes(),
-        now: DateTime.now(),
+        // 必须用校园挂钟基准：设备时区不是 UTC+8 时，用设备本地时间会把
+        // 当天已过的课当成未来，交给插件后被拒绝并中断整批排程。
+        now: campusWallClockNow(),
         minutesBefore: preferences.minutesBefore,
       );
     },

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../models/notification_preferences.dart';
 import 'notification_planner.dart';
 import 'notification_scheduler.dart';
@@ -32,6 +34,9 @@ class NotificationCoordinator {
   bool _disposed = false;
   Completer<bool>? _activeFlush;
 
+  /// 最近一次失败原因，供设置页在开启失败时显示，避免只给一句“请稍后重试”。
+  String? lastError;
+
   Future<NotificationEnableResult> setEnabled(bool enabled) async {
     if (!enabled) {
       try {
@@ -56,7 +61,10 @@ class NotificationCoordinator {
       return permission.exactAlarmsGranted
           ? NotificationEnableResult.enabled
           : NotificationEnableResult.enabledInexact;
-    } catch (_) {
+    } catch (error) {
+      // 只给用户一句“请稍后重试”会让平台异常彻底消失，这里留一条开发日志。
+      lastError = '$error';
+      debugPrint('上课提醒开启失败：$error');
       return NotificationEnableResult.failed;
     }
   }
@@ -84,8 +92,10 @@ class NotificationCoordinator {
         _pendingAgain = false;
         await _applyOnce();
       } while (_pendingAgain && !_disposed);
-    } catch (_) {
+    } catch (error) {
+      lastError = '$error';
       // 通知是可选副作用；权限或 OEM 调度失败不应影响课表主流程。
+      debugPrint('上课提醒排程失败：$error');
       succeeded = false;
     } finally {
       _running = false;
