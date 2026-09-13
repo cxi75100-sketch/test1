@@ -59,65 +59,13 @@ class CourseDetailPage extends ConsumerWidget {
             return ListView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
               children: [
-                Container(
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: courseGradientColors(color),
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.24),
-                        blurRadius: 24,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppPalette.sun,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                        child: Text(
-                          '周${_weekday(value.weekday)} · ${value.startSection}-${value.endSection} 节',
-                          style: TextStyle(
-                            color: AppPalette.ink,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        value.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          height: 1.2,
-                        ),
-                      ),
-                      if (value.classroom.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        Text(
-                          value.classroom,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.82),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+                _CourseHero(
+                  name: value.name,
+                  classroom: value.classroom,
+                  weekdayLabel: '周${_weekday(value.weekday)}',
+                  startSection: value.startSection,
+                  endSection: value.endSection,
+                  accent: color,
                 ),
                 const SizedBox(height: 18),
                 Card(
@@ -211,6 +159,149 @@ class CourseDetailPage extends ConsumerWidget {
 
   String _weekday(int value) =>
       const ['一', '二', '三', '四', '五', '六', '日'][value - 1];
+}
+
+class _CourseHero extends StatelessWidget {
+  const _CourseHero({
+    required this.name,
+    required this.classroom,
+    required this.weekdayLabel,
+    required this.startSection,
+    required this.endSection,
+    required this.accent,
+  });
+
+  final String name;
+  final String classroom;
+  final String weekdayLabel;
+  final int startSection;
+  final int endSection;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? scheme.surfaceContainerHigh : scheme.surface;
+    final sectionLabel = startSection == endSection
+        ? '$startSection 节'
+        : '$startSection-$endSection 节';
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: courseSurfaceTint(accent, base, isDark: isDark),
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: courseBadgeTint(accent),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '$weekdayLabel · $sectionLabel',
+              style: TextStyle(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            name,
+            style: TextStyle(
+              color: scheme.onSurface,
+              fontSize: 26,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+              letterSpacing: -0.5,
+            ),
+          ),
+          if (classroom.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              classroom,
+              style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 14),
+            ),
+          ],
+          const SizedBox(height: 18),
+          _SectionRoute(
+            accent: accent,
+            startSection: startSection,
+            endSection: endSection,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 把课程占用的节次画成线路：一天十站在线，属于本课程的站点画实心。
+///
+/// 与整周列的站点连线同一套语言，让「这门课落在一天的哪一段」一眼可读。
+class _SectionRoute extends StatelessWidget {
+  const _SectionRoute({
+    required this.accent,
+    required this.startSection,
+    required this.endSection,
+  });
+
+  final Color accent;
+  final int startSection;
+  final int endSection;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 18,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        Positioned.fill(
+          child: Center(
+            child: SizedBox(
+              width: double.infinity,
+              height: 1.5,
+              child: ColoredBox(color: Theme.of(context).colorScheme.outline),
+            ),
+          ),
+        ),
+        Row(
+          children: [
+            for (final sectionTime in officialSectionTimes)
+              Expanded(
+                child: Center(child: _station(context, sectionTime.section)),
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
+
+  Widget _station(BuildContext context, int section) {
+    final scheme = Theme.of(context).colorScheme;
+    final active = section >= startSection && section <= endSection;
+    return Container(
+      key: ValueKey('detail-section-station-$section'),
+      width: active ? 10 : 7,
+      height: active ? 10 : 7,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: active ? accent : Colors.transparent,
+        border: active
+            ? null
+            : Border.all(color: scheme.outlineVariant, width: 1.4),
+      ),
+    );
+  }
 }
 
 class _DetailTile extends StatelessWidget {

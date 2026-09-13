@@ -18,12 +18,36 @@ class AppTheme {
           brightness: brightness,
           surface: isDark ? AppPalette.nightSurface : AppPalette.paperBright,
         ).copyWith(
-          primary: isDark ? const Color(0xFF9EAAFF) : AppPalette.cobalt,
-          onPrimary: isDark ? const Color(0xFF18204B) : Colors.white,
+          primary: isDark ? const Color(0xFF8EABEA) : AppPalette.cobalt,
+          onPrimary: isDark ? const Color(0xFF17233A) : Colors.white,
           secondary: isDark ? const Color(0xFF72D8BD) : AppPalette.mint,
           tertiary: isDark ? const Color(0xFFFFA092) : AppPalette.coral,
+          primaryContainer: isDark
+              ? const Color(0xFF263757)
+              : const Color(0xFFE8EEFC),
+          onPrimaryContainer: isDark
+              ? const Color(0xFFDCE7FF)
+              : const Color(0xFF173A78),
           surface: isDark ? AppPalette.nightSurface : AppPalette.paperBright,
+          surfaceContainerLowest: isDark
+              ? AppPalette.night
+              : AppPalette.paperBright,
+          surfaceContainerLow: isDark
+              ? AppPalette.nightRaised
+              : const Color(0xFFF2F4F7),
+          surfaceContainer: isDark
+              ? const Color(0xFF202938)
+              : const Color(0xFFEAECF0),
+          surfaceContainerHigh: isDark
+              ? AppPalette.nightHigh
+              : const Color(0xFFE4E7EC),
+          surfaceContainerHighest: isDark
+              ? AppPalette.nightHighest
+              : const Color(0xFFD0D5DD),
           onSurface: isDark ? AppPalette.nightText : AppPalette.ink,
+          onSurfaceVariant: isDark
+              ? AppPalette.nightMuted
+              : AppPalette.mutedInk,
           outline: isDark ? AppPalette.nightLine : AppPalette.line,
           outlineVariant: isDark
               ? AppPalette.nightLine.withValues(alpha: 0.72)
@@ -62,37 +86,37 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         margin: EdgeInsets.zero,
-        color: surface,
+        color: isDark ? scheme.surfaceContainerLow : surface,
         elevation: 0,
         shadowColor: isDark
             ? Colors.black.withValues(alpha: 0.22)
             : const Color(0x1F26346A),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: line),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: isDark ? AppPalette.nightRaised : surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: isDark ? scheme.surfaceContainerLow : surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: isDark ? AppPalette.nightRaised : surface,
+        fillColor: isDark ? scheme.surfaceContainerLow : surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: line),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
       ),
@@ -105,7 +129,7 @@ class AppTheme {
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
           ),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
@@ -122,14 +146,14 @@ class AppTheme {
       dividerTheme: DividerThemeData(color: line, thickness: 1, space: 1),
       chipTheme: base.chipTheme.copyWith(
         backgroundColor: isDark
-            ? AppPalette.nightRaised
+            ? scheme.surfaceContainerHigh
             : const Color(0xFFF0EDE5),
         side: BorderSide(color: line),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(99)),
         labelStyle: const TextStyle(fontWeight: FontWeight.w700),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: isDark ? AppPalette.nightRaised : surface,
+        backgroundColor: isDark ? scheme.surfaceContainerLow : surface,
         indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.13),
       ),
       textTheme: base.textTheme.copyWith(

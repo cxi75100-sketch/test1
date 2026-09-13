@@ -40,6 +40,15 @@ void main() {
     expect(find.byKey(const ValueKey('theme-light')), findsOneWidget);
     expect(find.byKey(const ValueKey('theme-dark')), findsOneWidget);
 
+    // 身份卡必须走主题中性表面，旧的「海军蓝渐变板 + 亮黄校徽」不得回归。
+    final identityFinder = find.byKey(const ValueKey('settings-identity-card'));
+    final identity =
+        tester.widget<Container>(identityFinder).decoration! as BoxDecoration;
+    final lightScheme = Theme.of(tester.element(identityFinder)).colorScheme;
+    expect(identity.gradient, isNull);
+    expect(identity.color, lightScheme.surface);
+    expect(identity.border, isNotNull);
+
     await tester.tap(find.byKey(const ValueKey('theme-dark')));
     await tester.pumpAndSettle();
     expect((await database.allSettings())[themeModeSettingKey], 'dark');
