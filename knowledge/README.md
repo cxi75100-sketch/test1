@@ -22,6 +22,7 @@
 - `report_2026-09-12.md`：2026-09-12 当日改动报告（提交清单、release 打包、计划书、性能排查）
 - `report_2026-09-13_ui_theme_and_next_plan.md`：UI、明暗主题更新报告（实施问题、证据边界、下一步优化与多校衔接）
 - `report_2026-09-13_task062_route_language.md`：TASK-062「校园线路图」重做报告（设计语言定义、遗留问题对照、验证证据、数据边界与后续建议）
+- `report_2026-09-13_notifications_and_release.md`：上课提醒验收与 v1.0.3 发布报告（7 步验收证据、ISSUE-017/018 两个缺陷的排查与修复、发布核对与教训）
 - `testing.md`：测试范围与结果
 - `changelog.md`：实质变更记录
 - `incident_2026-09-11_db_injection.md`：事故报告 —— 真机数据库注入因 GBK 编码导致 App 课表加载失败
