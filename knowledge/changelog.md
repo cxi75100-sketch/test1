@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-13 - Agent（TASK-063 发布 v1.0.3 测试版）
+
+Added:
+- 版本号升到 `1.0.3+4`（提交 `b1cc690`），tag `v1.0.3`（annotated `2e26bc862eaa`）在 Gitee / GitHub 读回一致。
+- 发行版：GitHub `387810005`、Gitee `1140998`（均预发布，同一组附件：`ncpu-timetable-1.0.3-universal.apk` + `app-arm64-v8a-release.apk`）。
+
+Validation:
+- `CONFIRMED` 分 ABI 三个包与通用包逐个核对：`versionName=1.0.3`、含 `INTERNET`、正式证书 `2e8ac142…`、**`drawable/ic_stat_school` 在包内**（针对 ISSUE-017 的新增检查）。通用包 40,526,122 B / SHA-256 `7d381344…2bd80`；arm64 22,185,620 B / `e2b9b441…85167`。
+- `CONFIRMED` 模拟器 `install -r` 覆盖安装 x86_64 包：冷启动 `ok` / COLD / 792 ms、`flags=0x0` 非 debuggable、无致命异常、按 pid 过滤会话字段 0 命中。
+- `CONFIRMED` 两个平台的通用包都**实际下载**比对 SHA-256 与本地一致（Gitee 30.3 s / GitHub 12.0 s）；两边说明正文 492 汉字 / 0 U+FFFD。
+- 更正 `release.md` 的一条推论：「没有写 `shrinkResources`」不能推出「资源不会被裁」——实测 release 包 1039 个资源 / debug 包 1391 个，release 确实会裁掉无人引用的资源。
+- 本版包含 ISSUE-017 / ISSUE-018 修复：**`v1.0.0`～`v1.0.2` 安装包的上课提醒不可用**，测试版用户应升级到本版。
+- 发布用的 Gitee 令牌由用户提供（其自述仍然有效），只通过环境变量传入脚本、未写入任何文件；**用毕需用户自行撤销**。
+
 ## 2026-09-13 - Agent（TASK-039 上课提醒模拟器验收：发现并修复 2 个缺陷）
 
 Added:

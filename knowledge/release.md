@@ -45,8 +45,36 @@ flutter build apk --release --split-per-abi
 - **分发用 `arm64-v8a`（现代真机）与 `armeabi-v7a`（老设备）；`x86_64` 仅供模拟器**，不需要上网盘。
 - 不额外写 Gradle `splits {}`：Flutter CLI 已按 ABI 分包并自动加 `versionCode` 偏移（见 `build.gradle.kts` 内注释），两套机制并存会冲突。
 - **未开启 `minifyEnabled` / `shrinkResources`**：`third_party/flutter_inappwebview_android` 的兼容补丁与 AGP 9 已移除的默认 ProGuard 文件相关（见 DEC-008 / ISSUE-006），开混淆需单独验证，本轮不做。
+  ⚠️ **2026-09-13 更正：上面这条不能推出“资源不会被裁”。** 实测同一个项目的 release 包与 debug 包资源数差很多（release 1039 个 / 其中 `abc_*` 335 个；debug 1391 个 / 其中 `abc_*` 687 个），说明 release 构建确实会裁掉无人引用的资源。只被 Dart 代码按资源名引用的 `drawable/ic_stat_school` 就是这样被删掉的（ISSUE-017）。**判断“资源是否会被裁剪”要看实测，不能只看有没有写 `shrinkResources`。**
 
-### v1.0.2 测试版（当前分发版本）
+### v1.0.3 测试版（当前分发版本，2026-09-13）
+
+内容：TASK-062「校园线路图」UI 重做 + ISSUE-017 / ISSUE-018 两个提醒缺陷修复；版本号提交 `b1cc690`。
+
+`CONFIRMED`（`flutter build apk --release --split-per-abi`，耗时 33 s；通用包 `--target-platform android-arm,android-arm64`，40.5 s）：
+
+| 产物 | 大小 | versionCode | SHA-256 |
+| --- | --- | --- | --- |
+| `app-arm64-v8a-release.apk` | 22,185,620 B（21.2 MB） | 2004 | `e2b9b44153beaaaaf25519e27b8ccc6525c2a66fae31c8739040bad9d9e85167` |
+| `app-armeabi-v7a-release.apk` | 19,660,252 B（18.7 MB） | 1004 | `0da95677076f94d9…` |
+| `app-x86_64-release.apk` | 23,637,348 B（22.5 MB） | 4004 | `58ffa1fb54031ac8…` |
+
+通用包：`app-release.apk` 40,526,122 B，`versionName=1.0.3` / `versionCode=4`；分发副本 `ncpu-timetable-1.0.3-universal.apk`，SHA-256 `7d3813445b9debfaa3f96bf1b38031d4fbcbceebde4a08abff6c68695cd2bd80`。
+
+四个包经 `aapt2` / `apksigner` 逐个核对：`versionName=1.0.3`、含 `INTERNET`、正式证书 `2e8ac142…`、**`drawable/ic_stat_school` 均在包内**（这一项是针对 ISSUE-017 的新增检查）。模拟器 `install -r` 覆盖安装后冷启动 `ok` / COLD / 792 ms，`flags=0x0` 非 debuggable，logcat 无致命异常、按 pid 过滤会话字段 0 命中。
+
+发行版（均预发布，同一组附件）：
+
+| 平台 | id | 附件 |
+| --- | --- | --- |
+| GitHub | `387810005` | `ncpu-timetable-1.0.3-universal.apk`（40,526,122 B）、`app-arm64-v8a-release.apk`（22,185,620 B） |
+| Gitee | `1140998` | 同上两个附件 + 两个 tag 源码包 |
+
+`CONFIRMED` 验证：两个平台都**实际下载**通用包并比对 SHA-256，与本地一致（Gitee 30.3 s、GitHub 12.0 s）；两边说明正文均为 492 汉字 / 0 U+FFFD。tag `v1.0.3`（annotated，`2e26bc862eaa`）与 `master`（`b1cc690`）在 `origin` / `github` 读回一致。
+
+> **发布前新增必查项：通知图标必须在包内**（`aapt2 dump resources <apk> | grep ic_stat_school`）。`drawable/ic_stat_school` 只被 Dart 代码按名字引用，release 构建会裁掉它，导致「上课提醒」开启即失败 —— 即 ISSUE-017，`v1.0.0`～`v1.0.2` 的安装包都带着它。修复靠 `android/app/src/main/res/raw/keep.xml` 的 `tools:keep`，**该文件不得删除**。
+
+### v1.0.2 测试版
 
 `CONFIRMED`（2026-09-13，`flutter build apk --release --split-per-abi`，耗时 47.6 s）：
 
