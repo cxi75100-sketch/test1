@@ -33,7 +33,7 @@
 - 同源 XHR/fetch 钩子：脱敏采集报告可落盘；含身份字段的课表原始响应仅驻留内存，不写文件或日志。
 - 已确认核心接口 `POST /jwglxt/kbcx/xskbcx_cxXsgrkb.html?gnmkdm=N253508`，并实现 `NcpuTimetableParser`、`NcpuAdapter.parseTimetable`、导入预览、确认后本地替换写入。
 - Android 桌面小组件：Flutter 推送整周快照，Android 按设备日期计算当天课程，支持无课/学期前后状态、按高度截断及点击打开 App。
-- Android 本地上课提醒：默认关闭，用户主动开启；默认提前 15 分钟，可选 5/10/15/30。按当前学期、课程周次与统一作息排程，数据变化/回前台时重建；精确闹钟不可用时降级并提示。
+- Android 本地上课提醒：默认关闭，用户主动开启；默认提前 15 分钟，可选 5/10/15/30。按当前学期、课程周次与统一作息排程，数据变化/回前台时重建；精确闹钟不可用时降级并提示。**2026-09-13 修复两个缺陷**（见 ISSUE-017 / ISSUE-018）：release 资源裁剪会删掉通知图标导致开启即失败；提醒时间基准改用 `campusWallClockNow()`，排程前用 `futureReminders()` 滤掉过期项。修好后已在 `ncpu_api36` 上完成到点通知、重排、重启恢复与关闭清空的全链路验证。
 - Windows Android 工具链与 Debug APK 构建通路已打通；项目内固定 `flutter_inappwebview_android` 兼容补丁，不依赖全局 Pub Cache。
 - Android 模拟器验证环境已就绪：AVD `ncpu_api36`（API 36 / google_apis / x86_64），WHPX 硬件加速可用，Debug APK 可安装冷启动，x86_64 原生 SQLite 与小组件载荷链路均正常。用于承担需要造数据、改时钟、重启的验证。
 - Release 打包链路已打通：`flutter build apk --release --split-per-abi` 产出分 ABI 的正式签名 APK（arm64-v8a 21.2 MB / armeabi-v7a 18.7 MB / x86_64 22.5 MB）；签名材料由 `android/key.properties` 驱动，缺失时回退 debug 签名。详见 `knowledge/release.md`。
@@ -72,6 +72,9 @@
 - 提交前用 `git status` 与 `git rev-list --left-right --count HEAD...origin/master` 确认工作区与远端状态：本轮曾出现「知识库记为已完成验收、但改动从未提交」的情况，验收结论与提交状态必须分开核对。
 
 ## Validation Snapshot
+
+- `CONFIRMED`（2026-09-13 14:10 +08:00，TASK-039）：上课提醒在 `ncpu_api36`（release 包）完成第 1–7 步验收：默认关闭 ✓、通知权限弹窗 ✓、精确闹钟不允许（`window=+1h`）与允许（`window=0 exactAllowReason=permission`）两个分支 ✓、**实际到点通知**（计划 `05:30:00` UTC = 13:30 +08:00 = 第 5 节 14:00 减 30 分钟，到点收到「ZZ-Reminder 即将上课 / 14:00」，投递记录 `channel=course_reminders importance=4`、`icon id=0x7f08005e`）✓、点击通知不崩溃（pid 不变）✓、改课程（5-6 节→7-8 节，触发点 13:30→15:25）与改提前量（30→10→5 分钟）都精确重排且旧时间不残留 ✓、`adb reboot` 后未手动开 App 即由 `ScheduledNotificationBootReceiver` 恢复排程 ✓、关闭提醒后待触发闹钟 **196 → 0** ✓。**期间发现并修复 2 个缺陷**：ISSUE-017（release 资源裁剪删掉 `drawable/ic_stat_school`，插件 `initialize()` 抛 `invalid_icon`，导致开启提醒直接失败且权限弹窗都不出现——`v1.0.0`/`v1.0.1`/`v1.0.2` 三个已发布版本都受影响；修复为 `res/raw/keep.xml` 的 `tools:keep`）、ISSUE-018（planner 用设备本地 `DateTime.now()` 与校园挂钟时间比较，设备时区非 UTC+8 时把当天已过的课当成未来，插件抛 `Must be a date in the future`；且 `replaceAll` 先清空再逐条写入，单条异常即清空整批排程而界面仍显示「已开启」。修复为 `campusWallClockNow()` + `futureReminders()`，同一场景从 0 条恢复为 195 条）。`flutter analyze` 无问题、`flutter test` **142/142**。`UNVERIFIED`：厂商省电/后台策略下的到点可靠性需真机。环境：临时课已删除（13 门课）、精确闹钟 appop 恢复 `default`、提醒恢复默认关闭、系统夜间 `no`。
+- `CONFIRMED`（2026-09-13，环境更正）：`ncpu_api36` 实测 `persist.sys.timezone = GMT`（时钟绝对值正确，`date` 与 UTC 一致），并非此前记录的 `Asia/Shanghai`。提醒按校园时区换算、与设备时区无关（已实测），但**验收记录必须写明设备时区**——ISSUE-018 正是在该差异下才暴露。
 
 - `CONFIRMED`（2026-09-13 13:05 +08:00，TASK-062 收口）：上一轮遗留问题已修完，「线路」语言已铺满全 App。**改动**：新增 `courseSurfaceTint()` / `courseBadgeTint()` 统一课程色用法并删除只服务详情页的 `courseGradientColors()`；今日列表卡重做为整周窄卡的宽版（不再有海军蓝药丸与亮黄节次章，圆角 20→16）；详情页头卡改为同源课程面 + 淡色节次签 + 语义文字色，并新增「一天十站」节次线路；设置页身份卡改为中性表面 + 蓝色焦点；`AmbientBackground` 移除两处径向环境光斑，只留渐变与线路水印；空日列不再画整列卡片，只留列轨并把「沿线无课」移到线路上端；「今日/整周」切换按钮固定 48dp。**验证**：`flutter analyze` 无问题、`flutter test` **140/140**（新增 4 项）、Release 正式签名包 `install -r` 覆盖安装冷启动 760 ms，1080×2400 日间与夜间实画复核首页/整周/详情/设置，临时课验证后已删除（课程数 13），logcat 无致命异常、布局溢出或崩溃，会话字段 0 命中，外观与系统夜间开关均已还原。**未做**：OnePlus 真机安装。**提交状态**：改动已入库并推送，`8df6fe3`（feat：线路语言统一今日卡/详情/设置、去环境光斑、空日列与 48dp）、`e5b53fb`（docs：TASK-062 报告与知识库同步）；`master` 本地与 `origin`/`github` 读回均为 `e5b53fb`，工作区干净。
 - `CONFIRMED`（2026-09-13 13:00 +08:00，TASK-062）：`dart format --set-exit-if-changed lib test` 在当前 Flutter/Dart 下会改写 11 个与本次无关的既有文件（`lib/features/import/` 下 7 个 + 4 个测试），属格式化器版本升级带来的存量差异；已把这 11 个文件恢复原状，不在功能改动里顺手格式化。如需统一格式应单独提交。

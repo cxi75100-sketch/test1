@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-09-13 - Agent（TASK-039 上课提醒模拟器验收：发现并修复 2 个缺陷）
+
+Added:
+- `android/app/src/main/res/raw/keep.xml`：用 `tools:keep` 保住通知图标 `drawable/ic_stat_school`，否则 release 资源裁剪会删掉它。
+- `notification_planner.dart` 新增 `campusWallClockNow()`（校园挂钟基准，UTC+8，与设备时区无关）与 `futureReminders()`（滤掉触发点已过的提醒）；`notification_providers.dart` 改用前者作为规划基准，`notification_scheduler.replaceAll` 用后者在进插件前排掉过期项。
+- `notification_coordinator` 的两处 catch 补开发日志（`debugPrint`），失败原因不再完全消失。
+
+Fixed:
+- **ISSUE-017（发布阻断）**：release 包的上课提醒开启即失败，且连通知权限弹窗都不出现。根因是通知图标只被 Dart 字符串引用、被 release 资源裁剪删除，插件 `initialize()` 抛 `invalid_icon`。`v1.0.0`/`v1.0.1`/`v1.0.2` 三个已发布版本的该功能都受影响。
+- **ISSUE-018**：提醒的时间基准用设备本地时间，设备时区不是 UTC+8 时会把当天已过的课判成未来（插件抛 `Must be a date in the future`）；`replaceAll` 先清空再逐条写入，单条异常即清空整批排程，而界面仍显示「已开启」。修好后同一场景待触发闹钟从 0 条恢复为 195 条。
+
+Validation:
+- `CONFIRMED` `flutter analyze` 无问题、`flutter test` **142/142**（新增 2 项：挂钟分量不随设备时区漂移、过期提醒过滤边界）。
+- `CONFIRMED` 在 `ncpu_api36`（release 包，设备时区 `GMT`）逐项走完 TASK-039 的第 1–7 步：默认关闭、「Allow 通知」权限弹窗、精确闹钟不允许（`window=+1h`）与允许（`window=0 exactAllowReason=permission`）两个分支、**实际到点收到通知**（计划 05:30 UTC = 13:30 +08:00，标题/正文正确，投递记录 icon 即 `0x7f08005e`）、改课后触发点精确位移、改提前量重排、`adb reboot` 后由开机接收器恢复、关闭提醒后待触发闹钟 196 → 0。点击通知不崩溃；logcat 无致命异常。
+- `CONFIRMED` 验证环境：临时课与教室、教师已删除（课程数回到 13），精确闹钟 appop 恢复 `default`，提醒恢复默认关闭，系统夜间开关 `no`，模拟器保持运行。
+- `UNVERIFIED`：厂商省电/后台策略下的到点可靠性仍需真机（OriginOS / ColorOS）。
+- 更正：`ncpu_api36` 实测时区是 `GMT` 而非此前记录的 `Asia/Shanghai`（时钟绝对值正确）；ISSUE-018 正是在这个差异下暴露的。
+
 ## 2026-09-13 - Agent（TASK-062 收口：把「线路」语言铺满全 App）
 
 Added:

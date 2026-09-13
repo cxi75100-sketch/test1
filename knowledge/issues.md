@@ -1,5 +1,41 @@
 # Issues
 
+## ISSUE-018 提醒的时间基准用设备本地时间，且单条过期提醒会清空整批排程
+
+Status: Resolved（2026-09-13，TASK-039 模拟器验收期间发现并修复）
+
+Observed: 2026-09-13，时区为 `GMT` 的模拟器上，把一门当天**已经上过**的课（第 1、2 节，校园时间 08:20）纳入提醒范围后：本包待触发闹钟从 196 条变成 **0 条**，而设置页仍显示「已开启 · 提前 5 分钟」，没有任何提示。新加的开发日志给出根因异常：`Invalid argument (scheduledDate): Must be a date in the future: Instance of 'TZDateTime'`。
+
+Root Cause: 两处叠加。
+
+① **基准不一致**：`NotificationPlanner.build` 用调用方传入的 `now`（`DateTime.now()`，即*设备本地时间*）与课表挂钟时间（节次作息、学期日期）比较，两者不是同一个时间基准。设备时区落后于校园（UTC+8）时，当天已过的课被判为未来，交给通知插件后触发其“必须是将来的时间”校验；设备时区超前时，未来几小时的课会被误丢。
+
+② **失败被放大**：`LocalNotificationScheduler.replaceAll` 先 `cancelAllPendingNotifications()`、再逐条 `zonedSchedule`，任何一条抛异常都会中断整个循环，于是**刚被清空的排程再也回不来**；而 `flush()` 的这条失败路径只记日志、不回滚“已开启”状态，用户看到的是“已开启但没有任何提醒”。
+
+Impact: 设备时区不是 UTC+8 时，提醒要么整批失效且用户无感知，要么漏掉若干条。国内常见配置（`Asia/Shanghai`）观察不到，因此此前所有验收都没发现。与 ISSUE-016 同族（挂钟时间与时间点混用），但 ISSUE-016 覆盖的是日期存储，这里覆盖的是排程比较。
+
+Resolution: ① `notification_planner.dart` 新增 `campusWallClockNow()`：按 UTC+8 换算、但刻意返回“设备本地时刻的挂钟分量等于校园挂钟”的 `DateTime`，使它与课表时间的比较等价于纯挂钟比较；`notification_providers.dart` 用它替换 `DateTime.now()`。② 新增 `futureReminders()`，`replaceAll` 在进插件之前滤掉触发点已过的项。
+
+Evidence: `CONFIRMED` 同一失败场景（设备 GMT + 当天已过的 1、2 节课）修复后待触发闹钟为 **195 条**（正好排除那 1 条已过期的），logcat 中“排程失败”0 条；`flutter analyze` 无问题、`flutter test` **142/142**（新增 2 项：挂钟分量不随设备时区漂移、过期过滤边界）。修复前后对照都在同一台模拟器、同一门课上完成。
+
+Prevention: 提醒链路上任何“现在”的比较都必须用校园挂钟基准，不要直接 `DateTime.now()`；排程实现是“先清空再逐条写入”，进入插件前必须过滤非法项。见 `knowledge/notifications.md`。
+
+## ISSUE-017 release 构建裁掉通知图标，导致「上课提醒」开启即失败
+
+Status: Resolved（2026-09-13，TASK-039 模拟器验收期间发现并修复）
+
+Observed: 在 `ncpu_api36` 上安装**正式签名的 release 包**（`v1.0.2` 与本轮候选版都复现），设置页打开「上课提醒」立刻弹出「开启失败，请稍后重试」，**通知权限弹窗根本不出现**。`dumpsys package` 显示 `POST_NOTIFICATIONS: granted=false` 且没有 `USER_SET` 标志，说明系统从未收到过请求；手动 `pm grant` 之后重试仍然失败，排除“权限被拒”这条解释。
+
+Root Cause: `android/app/src/main/res/drawable/ic_stat_school.xml` **只被 Dart 代码用字符串引用**（`AndroidInitializationSettings('ic_stat_school')`）。release 构建的资源裁剪看不到这条引用，把它从 APK 里删掉了：实测同一个包内 `drawable/launch_background`、`drawable/widget_background` 因为被 XML 引用而保留，`drawable/ic_stat_school` 不存在（debug 包则包含）。`flutter_local_notifications` 在 `initialize()` 阶段就按资源名解析图标，找不到即抛 `PlatformException(invalid_icon, The resource ic_stat_school could not be found...)`，于是 `requestPermissions()` 在弹权限框之前就抛异常，协调器 catch 后统一报「开启失败」。
+
+Impact: **`v1.0.0`、`v1.0.1`、`v1.0.2` 三个已发布版本的「上课提醒」在 release 包中完全不可用**（debug 包正常）。用户只会看到一句「开启失败，请稍后重试」，没有可自查的线索。此前 TASK-014 的“APK 静态校验通过”无法发现它——静态检查只能证明文件存在，看不到资源裁剪。
+
+Resolution: 新增 `android/app/src/main/res/raw/keep.xml`，用 `tools:keep="@drawable/ic_stat_school"` 显式保留；`notification_coordinator` 的失败分支补上开发日志（`debugPrint`），避免同类异常再次被静默吞掉。
+
+Evidence: `CONFIRMED` 修复后 release 包 `aapt2 dump resources` 能查到 `resource 0x7f08005e drawable/ic_stat_school`；装到 `ncpu_api36` 后开启提醒，系统通知权限弹窗正常出现（`POST_NOTIFICATIONS: granted=true flags=[USER_SET]`），并能继续走到系统「Alarms & reminders」页；随后实际到点的通知投递记录中 `icon=Icon(typ=RESOURCE pkg=... id=0x7f08005e)` 正是该资源。
+
+Prevention: 通知图标属于“只被代码按名字引用”的资源，任何 release-only 的资源裁剪都会删它；`res/raw/keep.xml` 不要删，将来若更名或新增同类资源必须同步维护 keep 列表。
+
 ## ISSUE-016 学期开学日随时区漂移一天（日期被当作时间点存储）
 
 Status: Open（已定位，未修）
