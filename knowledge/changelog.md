@@ -16,6 +16,7 @@ Changed:
 - `AppPalette` 文档修正：`ink` 现在是日间正文色（等于 `onSurface`），不再是品牌深蓝；课程色一律用 `courseSurfaceTint` 混合，不再出现在固定色板里。
 
 Validation:
+- `CONFIRMED` 入库与推送：`8df6fe3`（feat）+ `e5b53fb`（docs，含本报告）已推送 Gitee 与 GitHub；`master` 本地、`origin`、`github` 三个读回均为 `e5b53fb`（`git ls-remote` 逐个核对，不依赖双推命令的返回码）。
 - `CONFIRMED` `flutter analyze` 无问题；`flutter test` **140/140**（新增 4 项：今日卡同源课程面与淡色节签、切换按钮 48dp 触控、空日列不画卡片且标签贴顶、详情页十站线路与节次落点）。
 - `CONFIRMED` Release 构建（33.1 s，正式证书 `2e8ac142…`）经 `adb install -r` 覆盖安装到 `ncpu_api36`，冷启动 `ok` / COLD / 760 ms；1080×2400 实画复核日间与夜间的首页、整周、详情、设置，并用临时课 `ZZ-Card-Check` 验证今日卡与编辑表单后删除，课程数回到 13。
 - `CONFIRMED` 全程 logcat 无 `FATAL EXCEPTION` / `RenderFlex overflowed` / `MissingPluginException`，无崩溃或 ANR，按 pid 过滤会话字段 0 命中。外观还原为「跟随系统」、系统夜间 `no`。
